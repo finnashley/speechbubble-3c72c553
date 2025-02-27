@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { WaniKaniUser } from "../lib/types";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 interface WaniKaniAuthProps {
   onAuthenticated: (apiKey: string, user: WaniKaniUser, openaiKey: string, elevenLabsKey: string) => void;
@@ -18,6 +20,7 @@ const WaniKaniAuth: React.FC<WaniKaniAuthProps> = ({ onAuthenticated }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showAdditionalKeys, setShowAdditionalKeys] = useState(false);
+  const { user } = useAuth();
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -31,14 +34,30 @@ const WaniKaniAuth: React.FC<WaniKaniAuthProps> = ({ onAuthenticated }) => {
     setError(null);
     
     try {
-      const user = await fetchUser(apiKey);
+      const wkUser = await fetchUser(apiKey);
       if (!showAdditionalKeys) {
         setShowAdditionalKeys(true);
         setIsLoading(false);
         return;
       }
       
-      onAuthenticated(apiKey, user, openaiKey, elevenLabsKey);
+      // Save the API keys to the user's profile if logged in
+      if (user) {
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            wanikani_key: apiKey,
+            openai_key: openaiKey,
+            elevenlabs_key: elevenLabsKey
+          })
+          .eq('id', user.id);
+          
+        if (error) {
+          console.error("Error updating profile:", error);
+        }
+      }
+      
+      onAuthenticated(apiKey, wkUser, openaiKey, elevenLabsKey);
     } catch (err) {
       setError("Authentication failed. Please check your API key and try again.");
       console.error(err);

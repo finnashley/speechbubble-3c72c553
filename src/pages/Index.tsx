@@ -113,17 +113,17 @@ const Index = () => {
       }
       
       const userData = await response.json();
-      const user: WaniKaniUser = {
+      const wkUser: WaniKaniUser = {
         id: userData.data.id,
         username: userData.data.username,
         level: userData.data.level,
         profile_url: userData.data.profile_url,
       };
       
-      setAppState((prev) => ({ ...prev, apiKey, user }));
+      setAppState((prev) => ({ ...prev, apiKey, user: wkUser }));
       
       // If authenticated user exists, save the API keys to their profile
-      if (this.user) {
+      if (user) {
         const { error } = await supabase
           .from('profiles')
           .update({
@@ -131,7 +131,7 @@ const Index = () => {
             openai_key: openaiKey,
             elevenlabs_key: elevenLabsKey
           })
-          .eq('id', this.user.id);
+          .eq('id', user.id);
           
         if (error) {
           console.error("Error updating profile:", error);
@@ -143,7 +143,7 @@ const Index = () => {
       localStorage.setItem("elevenlabs-api-key", elevenLabsKey);
       
       // Fetch vocabulary
-      const vocabulary = await fetchAllAvailableVocabulary(apiKey, user.level);
+      const vocabulary = await fetchAllAvailableVocabulary(apiKey, wkUser.level);
       setAppState((prev) => ({ ...prev, vocabulary }));
       
       toast({
@@ -174,7 +174,7 @@ const Index = () => {
     localStorage.setItem("elevenlabs-api-key", elevenLabsKey);
     
     // If authenticated user exists, save the API keys to their profile
-    if (this.user) {
+    if (user) {
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -182,7 +182,7 @@ const Index = () => {
           openai_key: openaiKey,
           elevenlabs_key: elevenLabsKey
         })
-        .eq('id', this.user.id);
+        .eq('id', user.id);
         
       if (error) {
         console.error("Error updating profile:", error);
