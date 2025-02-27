@@ -2,24 +2,27 @@
 import React, { useState } from "react";
 import { SelectedVocabulary, GeneratedSentence } from "../lib/types";
 import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, AlertCircle, Key, MessageCircle } from "lucide-react";
 import { generateSentences, getStoredApiKey, saveApiKey } from "../services/openaiService";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import ApiKeyModal from "./ApiKeyModal";
+import { Input } from "@/components/ui/input";
 
 interface SentenceGeneratorProps {
   selectedVocabulary: SelectedVocabulary[];
   onSentencesGenerated: (sentences: GeneratedSentence[]) => void;
 }
 
+const PRESET_COUNTS = [5, 10, 15, 20];
+
 const SentenceGenerator: React.FC<SentenceGeneratorProps> = ({
   selectedVocabulary,
   onSentencesGenerated,
 }) => {
-  const [count, setCount] = useState<number>(1);
+  const [count, setCount] = useState<number>(5);
+  const [customCount, setCustomCount] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
@@ -28,8 +31,23 @@ const SentenceGenerator: React.FC<SentenceGeneratorProps> = ({
   const storedApiKey = getStoredApiKey();
   const hasApiKey = !!storedApiKey;
 
-  const handleSliderChange = (values: number[]) => {
-    setCount(values[0]);
+  const handleCountChange = (newCount: number) => {
+    setCount(newCount);
+    setCustomCount("");
+  };
+
+  const handleCustomCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Only allow numbers
+    if (value === "" || /^\d+$/.test(value)) {
+      setCustomCount(value);
+      if (value !== "") {
+        const numValue = parseInt(value, 10);
+        if (numValue > 0 && numValue <= 50) {
+          setCount(numValue);
+        }
+      }
+    }
   };
 
   const handleGenerate = async () => {
@@ -128,19 +146,33 @@ const SentenceGenerator: React.FC<SentenceGeneratorProps> = ({
 
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <label htmlFor="sentence-count" className="text-sm font-medium">
+              <label className="text-sm font-medium">
                 Number of sentences
               </label>
               <span className="text-sm font-medium">{count}</span>
             </div>
-            <Slider
-              id="sentence-count"
-              value={[count]}
-              min={1}
-              max={5}
-              step={1}
-              onValueChange={handleSliderChange}
-            />
+            <div className="flex flex-wrap gap-2">
+              {PRESET_COUNTS.map((presetCount) => (
+                <Button
+                  key={presetCount}
+                  variant={count === presetCount && customCount === "" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleCountChange(presetCount)}
+                  className="flex-1 min-w-16"
+                >
+                  {presetCount}
+                </Button>
+              ))}
+              <div className="flex-1 min-w-24">
+                <Input
+                  value={customCount}
+                  onChange={handleCustomCountChange}
+                  placeholder="Custom"
+                  className="h-9"
+                  maxLength={2}
+                />
+              </div>
+            </div>
           </div>
 
           <div className="text-sm">
