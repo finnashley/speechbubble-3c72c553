@@ -4,9 +4,10 @@ import { SelectedVocabulary, GeneratedSentence } from "../lib/types";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import { generateSentences } from "../services/openaiService";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface SentenceGeneratorProps {
   selectedVocabulary: SelectedVocabulary[];
@@ -19,6 +20,7 @@ const SentenceGenerator: React.FC<SentenceGeneratorProps> = ({
 }) => {
   const [count, setCount] = useState<number>(1);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleGenerate = async () => {
@@ -31,7 +33,20 @@ const SentenceGenerator: React.FC<SentenceGeneratorProps> = ({
       return;
     }
 
+    // Check if OpenAI API key is set
+    if (!import.meta.env.VITE_OPENAI_API_KEY) {
+      setError("OpenAI API key is missing. Please add your API key to the .env file.");
+      toast({
+        title: "API Key Missing",
+        description: "OpenAI API key is required for sentence generation.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsGenerating(true);
+    setError(null);
+    
     try {
       const sentences = await generateSentences(selectedVocabulary, count);
       onSentencesGenerated(sentences);
@@ -41,6 +56,8 @@ const SentenceGenerator: React.FC<SentenceGeneratorProps> = ({
       });
     } catch (error) {
       console.error("Error generating sentences:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      setError(`Failed to generate sentences: ${errorMessage}`);
       toast({
         title: "Error",
         description: "Failed to generate sentences. Please try again.",
@@ -60,6 +77,25 @@ const SentenceGenerator: React.FC<SentenceGeneratorProps> = ({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        
+        {!import.meta.env.VITE_OPENAI_API_KEY && (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>API Key Required</AlertTitle>
+            <AlertDescription>
+              Please add your OpenAI API key to the .env file to generate sentences.
+              You can get an API key from the <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="underline">OpenAI platform</a>.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="space-y-2">
           <div className="flex justify-between items-center">
             <label htmlFor="sentence-count" className="text-sm font-medium">
@@ -100,7 +136,7 @@ const SentenceGenerator: React.FC<SentenceGeneratorProps> = ({
       <CardFooter>
         <Button
           onClick={handleGenerate}
-          disabled={isGenerating || selectedVocabulary.length === 0}
+          disabled={isGenerating || selectedVocabulary.length === 0 || !import.meta.env.VITE_OPENAI_API_KEY}
           className="w-full"
         >
           {isGenerating ? (
