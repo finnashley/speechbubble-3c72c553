@@ -13,10 +13,10 @@ import { fetchAllAvailableVocabulary } from "@/services/wanikaniService";
 import { generateSentences } from "@/services/openaiService";
 import { AppState, WaniKaniUser, SelectedVocabulary, GeneratedSentence, GrammarLevel, TestType } from "@/lib/types";
 import { Loader2 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const LOCAL_STORAGE_KEY = "speechbubble-app-state";
-const OPENAI_KEY_STORAGE = "openai-api-key";
-const ELEVENLABS_KEY_STORAGE = "elevenlabs-api-key";
 const TEST_TYPE_STORAGE = "testType";
 
 const Index = () => {
@@ -33,6 +33,47 @@ const Index = () => {
   const [testSentences, setTestSentences] = useState<GeneratedSentence[]>([]);
   
   const { toast } = useToast();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      if (!user) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (error) {
+          console.error("Error fetching profile:", error);
+          return;
+        }
+
+        // If we have WaniKani API key stored, initialize the app
+        if (data.wanikani_key) {
+          const openaiKey = data.openai_key || "";
+          const elevenLabsKey = data.elevenlabs_key || "";
+          
+          // Store API keys in localStorage for service usage
+          localStorage.setItem("openai-api-key", openaiKey);
+          localStorage.setItem("elevenlabs-api-key", elevenLabsKey);
+          
+          // Initialize WaniKani
+          try {
+            await handleWaniKaniAuth(data.wanikani_key, openaiKey, elevenLabsKey);
+          } catch (error) {
+            console.error("Error initializing WaniKani:", error);
+          }
+        }
+      } catch (error) {
+        console.error("Error in loadUserProfile:", error);
+      }
+    };
+
+    loadUserProfile();
+  }, [user]);
 
   useEffect(() => {
     const savedState = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -52,6 +93,75 @@ const Index = () => {
     }
   }, [appState]);
 
+  const handleWaniKaniAuth = async (
+    apiKey: string, 
+    openaiKey: string = "", 
+    elevenLabsKey: string = ""
+  ) => {
+    setIsLoading(true);
+    
+    try {
+      // Fetch WaniKani user info
+      const response = await fetch("https://api.wanikani.com/v2/user", {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch WaniKani user");
+      }
+      
+      const userData = await response.json();
+      const user: WaniKaniUser = {
+        id: userData.data.id,
+        username: userData.data.username,
+        level: userData.data.level,
+        profile_url: userData.data.profile_url,
+      };
+      
+      setAppState((prev) => ({ ...prev, apiKey, user }));
+      
+      // If authenticated user exists, save the API keys to their profile
+      if (this.user) {
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            wanikani_key: apiKey,
+            openai_key: openaiKey,
+            elevenlabs_key: elevenLabsKey
+          })
+          .eq('id', this.user.id);
+          
+        if (error) {
+          console.error("Error updating profile:", error);
+        }
+      }
+      
+      // Store API keys in localStorage for service usage
+      localStorage.setItem("openai-api-key", openaiKey);
+      localStorage.setItem("elevenlabs-api-key", elevenLabsKey);
+      
+      // Fetch vocabulary
+      const vocabulary = await fetchAllAvailableVocabulary(apiKey, user.level);
+      setAppState((prev) => ({ ...prev, vocabulary }));
+      
+      toast({
+        title: "Connected to WaniKani",
+        description: `Loaded ${vocabulary.length} vocabulary items from your account (SRS started items only).`,
+      });
+    } catch (error) {
+      console.error("Error in handleWaniKaniAuth:", error);
+      toast({
+        title: "Error connecting to WaniKani",
+        description: "Failed to authenticate with WaniKani. Please check your API key.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleAuthenticated = async (
     apiKey: string, 
     user: WaniKaniUser, 
@@ -60,8 +170,24 @@ const Index = () => {
   ) => {
     setAppState((prev) => ({ ...prev, apiKey, user }));
     
-    localStorage.setItem(OPENAI_KEY_STORAGE, openaiKey);
-    localStorage.setItem(ELEVENLABS_KEY_STORAGE, elevenLabsKey);
+    localStorage.setItem("openai-api-key", openaiKey);
+    localStorage.setItem("elevenlabs-api-key", elevenLabsKey);
+    
+    // If authenticated user exists, save the API keys to their profile
+    if (this.user) {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          wanikani_key: apiKey,
+          openai_key: openaiKey,
+          elevenlabs_key: elevenLabsKey
+        })
+        .eq('id', this.user.id);
+        
+      if (error) {
+        console.error("Error updating profile:", error);
+      }
+    }
     
     try {
       setIsLoading(true);
@@ -93,8 +219,8 @@ const Index = () => {
     setSelectedVocabulary([]);
     setTestSentences([]);
     localStorage.removeItem(LOCAL_STORAGE_KEY);
-    localStorage.removeItem(OPENAI_KEY_STORAGE);
-    localStorage.removeItem(ELEVENLABS_KEY_STORAGE);
+    localStorage.removeItem("openai-api-key");
+    localStorage.removeItem("elevenlabs-api-key");
     localStorage.removeItem(TEST_TYPE_STORAGE);
     
     toast({
