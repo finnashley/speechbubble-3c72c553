@@ -1,13 +1,14 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { GeneratedSentence } from "@/lib/types";
-import { Loader2, Check, X, ArrowRight, RotateCcw } from "lucide-react";
+import { Loader2, Check, X, ArrowRight, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { generateSpeech } from "@/services/elevenLabsService";
 
 interface TestModeProps {
   sentences: GeneratedSentence[];
@@ -21,10 +22,85 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
   const [isCorrect, setIsCorrect] = useState(false);
   const [showReading, setShowReading] = useState(false);
   const [score, setScore] = useState({ correct: 0, total: 0 });
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [apiKey, setApiKey] = useState<string | null>(localStorage.getItem("elevenLabsApiKey"));
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
 
   const currentSentence = sentences[currentIndex];
   const isLastSentence = currentIndex === sentences.length - 1;
+
+  // Function to generate speech for the current sentence
+  const generateAudio = async () => {
+    if (!apiKey) {
+      const newApiKey = prompt("Please enter your ElevenLabs API key to enable speech:");
+      if (!newApiKey) {
+        toast({
+          title: "API Key Required",
+          description: "A valid ElevenLabs API key is required for speech functionality.",
+          variant: "destructive",
+        });
+        return;
+      }
+      localStorage.setItem("elevenLabsApiKey", newApiKey);
+      setApiKey(newApiKey);
+    }
+
+    setIsLoadingAudio(true);
+    const url = await generateSpeech(currentSentence.japanese, { apiKey: apiKey! });
+    setIsLoadingAudio(false);
+    
+    if (url) {
+      setAudioUrl(url);
+      toast({
+        title: "Audio Generated",
+        description: "The sentence audio is ready to play.",
+      });
+    } else {
+      toast({
+        title: "Audio Generation Failed",
+        description: "There was an error generating the audio. Please check your API key.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Function to play/pause the audio
+  const toggleAudio = () => {
+    if (!audioRef.current) return;
+    
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play();
+      setIsPlaying(true);
+    }
+  };
+
+  // Effect to handle audio events
+  useEffect(() => {
+    if (audioRef.current) {
+      const onEnded = () => setIsPlaying(false);
+      audioRef.current.addEventListener('ended', onEnded);
+      
+      return () => {
+        audioRef.current?.removeEventListener('ended', onEnded);
+      };
+    }
+  }, [audioUrl]);
+
+  // Function to load audio when changing to a new sentence
+  useEffect(() => {
+    // Clean up previous audio URL if exists
+    if (audioUrl) {
+      URL.revokeObjectURL(audioUrl);
+      setAudioUrl(null);
+    }
+    setIsPlaying(false);
+  }, [currentIndex]);
 
   // Function to check user's answer against correct answer
   const checkAnswer = () => {
@@ -153,8 +229,48 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
 
       <CardContent className="space-y-4">
         <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-md">
-          <h3 className="font-bold mb-1 text-lg">Translate this sentence:</h3>
+          <div className="flex justify-between items-center mb-1">
+            <h3 className="font-bold text-lg">Translate this sentence:</h3>
+            <div>
+              {audioUrl ? (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={toggleAudio}
+                  disabled={isLoadingAudio}
+                >
+                  {isPlaying ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+                </Button>
+              ) : (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={generateAudio}
+                  disabled={isLoadingAudio}
+                >
+                  {isLoadingAudio ? <Loader2 className="h-5 w-5 animate-spin" /> : <Volume2 className="h-5 w-5" />}
+                </Button>
+              )}
+            </div>
+          </div>
           <p className="text-xl mb-2 font-japanese">{currentSentence.japanese}</p>
+          
+          {/* Hidden audio element */}
+          {audioUrl && (
+            <audio 
+              ref={audioRef} 
+              src={audioUrl} 
+              onEnded={() => setIsPlaying(false)}
+              onError={() => {
+                toast({
+                  title: "Playback Error",
+                  description: "Unable to play the audio. Please try again.",
+                  variant: "destructive",
+                });
+                setIsPlaying(false);
+              }}
+            />
+          )}
           
           {showReading && renderJapaneseWithFurigana()}
           
