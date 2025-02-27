@@ -120,8 +120,8 @@
 
 .app-card {
   @apply bg-card text-card-foreground rounded-lg shadow-sm;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
   transition: all 0.3s ease;
 }
 
