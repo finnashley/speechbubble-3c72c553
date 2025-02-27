@@ -152,81 +152,77 @@ const Index = () => {
 
   return (
     <Layout user={appState.user} onLogout={handleLogout}>
-      <div className={`${isTestMode ? "flex-grow flex flex-col" : "space-y-8"}`}>
-        {!appState.apiKey || !appState.user ? (
-          <>
-            <div className="text-center my-12">
-              <h1 className="text-4xl font-bold mb-4">Speechbubble</h1>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Generate custom practice sentences using your WaniKani vocabulary
-              </p>
+      {!appState.apiKey || !appState.user ? (
+        <>
+          <div className="text-center my-12">
+            <h1 className="text-4xl font-bold mb-4">Speechbubble</h1>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Generate custom practice sentences using your WaniKani vocabulary
+            </p>
+          </div>
+          
+          <WaniKaniAuth onAuthenticated={handleAuthenticated} />
+          
+          {appState.generatedSentences.length > 0 && (
+            <HistorySection
+              sentences={appState.generatedSentences}
+              onClearHistory={handleClearHistory}
+              onDeleteSentence={handleDeleteSentence}
+            />
+          )}
+        </>
+      ) : (
+        <>
+          {!isTestMode && (
+            <Card className="app-card slide-up">
+              <CardHeader>
+                <CardTitle>Welcome to Speechbubble, {appState.user.username}</CardTitle>
+                <CardDescription>
+                  Level {appState.user.level} on WaniKani. You have access to {appState.vocabulary.length} vocabulary items.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Select vocabulary words you want to practice with, then start a test to practice with generated sentences.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+          
+          {isLoading ? (
+            <div className="flex justify-center items-center py-12">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              <span className="ml-3 text-lg">Loading your vocabulary...</span>
             </div>
-            
-            <WaniKaniAuth onAuthenticated={handleAuthenticated} />
-            
-            {appState.generatedSentences.length > 0 && (
-              <HistorySection
-                sentences={appState.generatedSentences}
-                onClearHistory={handleClearHistory}
-                onDeleteSentence={handleDeleteSentence}
+          ) : isTestMode ? (
+            <TestMode 
+              sentences={testSentences}
+              onExitTest={handleExitTest}
+            />
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <VocabularySelector
+                vocabulary={appState.vocabulary}
+                onSelectionChange={handleSelectionChange}
               />
-            )}
-          </>
-        ) : (
-          <>
-            {!isTestMode && (
-              <Card className="app-card slide-up">
-                <CardHeader>
-                  <CardTitle>Welcome to Speechbubble, {appState.user.username}</CardTitle>
-                  <CardDescription>
-                    Level {appState.user.level} on WaniKani. You have access to {appState.vocabulary.length} vocabulary items.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    Select vocabulary words you want to practice with, then start a test to practice with generated sentences.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-            
-            {isLoading ? (
-              <div className="flex justify-center items-center py-12">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <span className="ml-3 text-lg">Loading your vocabulary...</span>
-              </div>
-            ) : isTestMode ? (
-              <div className="flex-grow flex flex-col">
-                <TestMode 
-                  sentences={testSentences}
-                  onExitTest={handleExitTest}
-                />
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <VocabularySelector
-                  vocabulary={appState.vocabulary}
-                  onSelectionChange={handleSelectionChange}
-                />
-                
-                <TestSetup
-                  selectedVocabulary={selectedVocabulary}
-                  onStartTest={handleStartTest}
-                />
-              </div>
-            )}
-            
-            {!isTestMode && (
-              <HistorySection
-                sentences={appState.generatedSentences}
-                onClearHistory={handleClearHistory}
-                onDeleteSentence={handleDeleteSentence}
-                showOnlyIfHasHistory={true}
+              
+              <TestSetup
+                selectedVocabulary={selectedVocabulary}
+                onStartTest={handleStartTest}
               />
-            )}
-          </>
-        )}
-      </div>
+            </div>
+          )}
+          
+          {!isTestMode && (
+            <HistorySection
+              sentences={appState.generatedSentences}
+              onClearHistory={handleClearHistory}
+              onDeleteSentence={handleDeleteSentence}
+              showOnlyIfHasHistory={true}
+            />
+          )}
+        </>
+      )}
     </Layout>
   );
 };

@@ -13,12 +13,12 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Header user={user} onLogout={onLogout} />
-      <div className="flex-grow flex flex-col">
-        <main className="app-container py-6 mt-6 flex-grow flex flex-col">
+      <main className="flex-grow py-6">
+        <div className="app-container h-full">
           {children}
-        </main>
-      </div>
-      <footer className="border-t border-border py-8">
+        </div>
+      </main>
+      <footer className="border-t border-border py-6">
         <div className="app-container text-center text-sm text-muted-foreground">
           <p>Speechbubble - Practice Japanese with your WaniKani vocabulary</p>
         </div>

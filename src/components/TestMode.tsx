@@ -111,7 +111,7 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
 
   if (!currentSentence) {
     return (
-      <Card className="w-full flex-grow mt-6">
+      <Card className="w-full mt-4 mb-4">
         <CardContent className="pt-6 text-center">
           <p>No sentences available for testing. Please generate some sentences first.</p>
           <Button onClick={onExitTest} className="mt-4">
@@ -123,7 +123,7 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
   }
 
   return (
-    <Card className="w-full flex-grow mt-6 slide-up flex flex-col">
+    <Card className="w-full mt-4 mb-4 slide-up">
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle>Translation Test</CardTitle>
@@ -142,7 +142,7 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="space-y-4 flex-grow">
+      <CardContent className="space-y-4">
         <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-md">
           <h3 className="font-bold mb-1 text-lg">Translate this sentence:</h3>
           <p className="text-xl mb-2 font-japanese">{currentSentence.japanese}</p>
@@ -177,7 +177,7 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
         </div>
       </CardContent>
 
-      <CardFooter className="flex flex-col sm:flex-row gap-2 mt-auto">
+      <CardFooter className="flex flex-col sm:flex-row gap-2">
         <Button 
           variant="outline"
           onClick={onExitTest}
