@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import Layout from "@/components/Layout";
@@ -15,6 +14,8 @@ import { AppState, WaniKaniUser, SelectedVocabulary, GeneratedSentence, GrammarL
 import { Loader2 } from "lucide-react";
 
 const LOCAL_STORAGE_KEY = "speechbubble-app-state";
+const OPENAI_KEY_STORAGE = "openai-api-key";
+const ELEVENLABS_KEY_STORAGE = "elevenlabs-api-key";
 
 const Index = () => {
   const [appState, setAppState] = useState<AppState>({
@@ -49,8 +50,16 @@ const Index = () => {
     }
   }, [appState]);
 
-  const handleAuthenticated = async (apiKey: string, user: WaniKaniUser) => {
+  const handleAuthenticated = async (
+    apiKey: string, 
+    user: WaniKaniUser, 
+    openaiKey: string, 
+    elevenLabsKey: string
+  ) => {
     setAppState((prev) => ({ ...prev, apiKey, user }));
+    
+    localStorage.setItem(OPENAI_KEY_STORAGE, openaiKey);
+    localStorage.setItem(ELEVENLABS_KEY_STORAGE, elevenLabsKey);
     
     try {
       setIsLoading(true);
@@ -82,10 +91,12 @@ const Index = () => {
     setSelectedVocabulary([]);
     setTestSentences([]);
     localStorage.removeItem(LOCAL_STORAGE_KEY);
+    localStorage.removeItem(OPENAI_KEY_STORAGE);
+    localStorage.removeItem(ELEVENLABS_KEY_STORAGE);
     
     toast({
       title: "Logged out",
-      description: "You have been logged out of WaniKani. Your history has been cleared.",
+      description: "You have been logged out of WaniKani. Your history and API keys have been cleared.",
     });
   };
 
@@ -108,7 +119,6 @@ const Index = () => {
       setTestSentences(sentences);
       setIsTestMode(true);
       
-      // Add generated sentences to history
       setAppState((prev) => ({
         ...prev,
         generatedSentences: [...sentences, ...prev.generatedSentences],
