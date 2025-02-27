@@ -87,18 +87,18 @@
 .app-container {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 0 1rem;
+  padding: 0 1.5rem;
 }
 
 @media (min-width: 640px) {
   .app-container {
-    padding: 0 1.5rem;
+    padding: 0 2rem;
   }
 }
 
 @media (min-width: 1024px) {
   .app-container {
-    padding: 0 2rem;
+    padding: 0 2.5rem;
   }
 }
 
@@ -120,8 +120,8 @@
 
 .app-card {
   @apply bg-card text-card-foreground rounded-lg shadow-sm;
-  padding: 1.25rem;
-  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
   transition: all 0.3s ease;
   position: relative;
   z-index: 1;
