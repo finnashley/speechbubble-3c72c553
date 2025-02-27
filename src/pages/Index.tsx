@@ -5,11 +5,13 @@ import Layout from "@/components/Layout";
 import WaniKaniAuth from "@/components/WaniKaniAuth";
 import VocabularySelector from "@/components/VocabularySelector";
 import SentenceGenerator from "@/components/SentenceGenerator";
+import TestMode from "@/components/TestMode";
 import HistorySection from "@/components/HistorySection";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { fetchAllAvailableVocabulary } from "@/services/wanikaniService";
 import { AppState, WaniKaniUser, SelectedVocabulary, GeneratedSentence } from "@/lib/types";
-import { Loader2 } from "lucide-react";
+import { Loader2, BookOpen } from "lucide-react";
 
 const LOCAL_STORAGE_KEY = "speechbubble-app-state";
 
@@ -23,6 +25,7 @@ const Index = () => {
   
   const [selectedVocabulary, setSelectedVocabulary] = useState<SelectedVocabulary[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isTestMode, setIsTestMode] = useState(false);
   
   const { toast } = useToast();
 
@@ -95,6 +98,15 @@ const Index = () => {
       ...prev,
       generatedSentences: [...newSentences, ...prev.generatedSentences],
     }));
+    
+    // Automatically switch to test mode after generating sentences
+    if (newSentences.length > 0) {
+      setIsTestMode(true);
+      toast({
+        title: "Test mode activated",
+        description: `Time to practice with ${newSentences.length} new sentences!`,
+      });
+    }
   };
 
   const handleClearHistory = () => {
@@ -112,6 +124,22 @@ const Index = () => {
         (sentence) => sentence.id !== id
       ),
     }));
+  };
+
+  const startTest = () => {
+    if (appState.generatedSentences.length === 0) {
+      toast({
+        title: "No sentences available",
+        description: "Please generate some sentences first before starting the test.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsTestMode(true);
+  };
+
+  const exitTest = () => {
+    setIsTestMode(false);
   };
 
   return (
@@ -145,10 +173,21 @@ const Index = () => {
                   Level {appState.user.level} on WaniKani. You have access to {appState.vocabulary.length} vocabulary items.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex flex-col sm:flex-row sm:justify-between gap-4">
                 <p className="text-sm text-muted-foreground">
                   Select vocabulary words you want to practice with, then generate sentences that use those words.
                 </p>
+                
+                {!isTestMode && appState.generatedSentences.length > 0 && (
+                  <Button 
+                    onClick={startTest} 
+                    variant="outline" 
+                    className="w-full sm:w-auto"
+                  >
+                    <BookOpen className="mr-2 h-4 w-4" />
+                    Start Practice Test
+                  </Button>
+                )}
               </CardContent>
             </Card>
             
@@ -157,6 +196,11 @@ const Index = () => {
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
                 <span className="ml-3 text-lg">Loading your vocabulary...</span>
               </div>
+            ) : isTestMode ? (
+              <TestMode 
+                sentences={appState.generatedSentences} 
+                onExitTest={exitTest} 
+              />
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <VocabularySelector
@@ -171,12 +215,14 @@ const Index = () => {
               </div>
             )}
             
-            <HistorySection
-              sentences={appState.generatedSentences}
-              onClearHistory={handleClearHistory}
-              onDeleteSentence={handleDeleteSentence}
-              showOnlyIfHasHistory={false}
-            />
+            {!isTestMode && (
+              <HistorySection
+                sentences={appState.generatedSentences}
+                onClearHistory={handleClearHistory}
+                onDeleteSentence={handleDeleteSentence}
+                showOnlyIfHasHistory={false}
+              />
+            )}
           </>
         )}
       </div>
