@@ -31,7 +31,15 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
 
   const currentSentence = sentences[currentIndex];
   const isLastSentence = currentIndex === sentences.length - 1;
-  const testType = currentSentence?.testType || "japaneseToEnglish";
+  
+  // Extract test type from the current sentence's metadata or from localStorage
+  // If not available, default to "japaneseToEnglish"
+  const getTestType = (): TestType => {
+    const savedTestType = localStorage.getItem("testType") as TestType | null;
+    return (savedTestType || "japaneseToEnglish") as TestType;
+  };
+  
+  const testType = getTestType();
   const isListeningTest = testType === "listening";
   const isJapaneseToEnglish = testType === "japaneseToEnglish";
   const isEnglishToJapanese = testType === "englishToJapanese";
@@ -74,7 +82,8 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
       apiKey: apiKey!,
       stability,
       similarityBoost,
-      speakingRate: speechSpeed === "slow" ? 0.7 : speechSpeed === "fast" ? 1.5 : 1
+      speakingRate: speechSpeed === "slow" ? 0.7 : speechSpeed === "fast" ? 1.5 : 1,
+      isJapanese: true // Add this flag for Japanese text
     });
     setIsLoadingAudio(false);
     
