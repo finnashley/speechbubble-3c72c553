@@ -164,12 +164,9 @@ const TestSetup: React.FC<TestSetupProps> = ({
         )}
 
         <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <label className="text-sm font-medium">
-              Number of {itemTypeLabel}
-            </label>
-            <span className="text-sm font-medium">{count}</span>
-          </div>
+          <label className="text-sm font-medium">
+            Number of {itemTypeLabel}: <span className="font-semibold">{count}</span>
+          </label>
           <div className="flex flex-wrap gap-2">
             {PRESET_COUNTS.map((presetCount) => (
               <Button
