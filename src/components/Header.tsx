@@ -1,7 +1,8 @@
 
 import React from "react";
 import { WaniKaniUser } from "../lib/types";
-import { MessageCircle, User } from "lucide-react";
+import { LogOut, MessageCircle, User } from "lucide-react";
+import { Button } from "./ui/button";
 
 interface HeaderProps {
   user?: WaniKaniUser | null;
@@ -27,12 +28,15 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
               <p className="font-medium">{user.username}</p>
               <p className="text-muted-foreground">Level {user.level}</p>
             </div>
-            <button 
+            <Button 
+              variant="outline" 
+              size="sm" 
               onClick={onLogout}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="flex items-center gap-1"
             >
+              <LogOut className="h-4 w-4" />
               Logout
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="flex items-center">

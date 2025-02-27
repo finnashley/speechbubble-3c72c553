@@ -75,6 +75,10 @@ const Index = () => {
       vocabulary: [],
     }));
     setSelectedVocabulary([]);
+    toast({
+      title: "Logged out",
+      description: "You have been logged out of WaniKani.",
+    });
   };
 
   const handleSelectionChange = (selected: SelectedVocabulary[]) => {
@@ -106,7 +110,7 @@ const Index = () => {
   };
 
   return (
-    <Layout>
+    <Layout user={appState.user} onLogout={handleLogout}>
       <div className="space-y-8">
         {!appState.apiKey || !appState.user ? (
           <>
