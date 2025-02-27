@@ -17,6 +17,7 @@ import { Loader2 } from "lucide-react";
 const LOCAL_STORAGE_KEY = "speechbubble-app-state";
 const OPENAI_KEY_STORAGE = "openai-api-key";
 const ELEVENLABS_KEY_STORAGE = "elevenlabs-api-key";
+const TEST_TYPE_STORAGE = "testType";
 
 const Index = () => {
   const [appState, setAppState] = useState<AppState>({
@@ -94,6 +95,7 @@ const Index = () => {
     localStorage.removeItem(LOCAL_STORAGE_KEY);
     localStorage.removeItem(OPENAI_KEY_STORAGE);
     localStorage.removeItem(ELEVENLABS_KEY_STORAGE);
+    localStorage.removeItem(TEST_TYPE_STORAGE);
     
     toast({
       title: "Logged out",
@@ -114,6 +116,9 @@ const Index = () => {
       });
       return;
     }
+
+    // Save test type to localStorage for the test mode component
+    localStorage.setItem(TEST_TYPE_STORAGE, testType);
 
     // Store speaking speed in localStorage for the audio generator
     if (speakingSpeed) {

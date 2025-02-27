@@ -24,7 +24,7 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
   const [score, setScore] = useState({ correct: 0, total: 0 });
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [apiKey, setApiKey] = useState<string | null>(localStorage.getItem("elevenLabsApiKey"));
+  const [apiKey, setApiKey] = useState<string | null>(localStorage.getItem("elevenlabs-api-key"));
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
@@ -32,11 +32,22 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
   const currentSentence = sentences[currentIndex];
   const isLastSentence = currentIndex === sentences.length - 1;
   
-  // Extract test type from the current sentence's metadata or from localStorage
-  // If not available, default to "japaneseToEnglish"
+  // Determine test type - prioritize the localStorage value then fallback to sentence data
   const getTestType = (): TestType => {
-    const savedTestType = localStorage.getItem("testType") as TestType | null;
-    return (savedTestType || "japaneseToEnglish") as TestType;
+    // First, check localStorage for the most recent test type
+    const storedTestType = localStorage.getItem("testType") as TestType | null;
+    
+    if (storedTestType) {
+      return storedTestType;
+    }
+    
+    // Then check the current sentence metadata
+    if (currentSentence?.testType) {
+      return currentSentence.testType;
+    }
+    
+    // Default fallback
+    return "japaneseToEnglish";
   };
   
   const testType = getTestType();
@@ -56,7 +67,7 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
         });
         return;
       }
-      localStorage.setItem("elevenLabsApiKey", newApiKey);
+      localStorage.setItem("elevenlabs-api-key", newApiKey);
       setApiKey(newApiKey);
     }
 
