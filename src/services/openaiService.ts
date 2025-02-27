@@ -5,7 +5,9 @@ import {
   SelectedVocabulary,
   SentenceResponse,
   TestType,
+  GeneratedSentence,
 } from "../lib/types";
+import { v4 as uuidv4 } from 'uuid';
 
 const API_URL = "https://api.openai.com/v1/chat/completions";
 
@@ -22,7 +24,7 @@ export const getJapaneseToEnglishSentences = async (
   grammarLevel: GrammarLevel
 ): Promise<SentenceResponse[]> => {
   const vocabWords = selectedVocabulary
-    .map((v) => `${v.japanese}: ${v.english}`)
+    .map((v) => `${v.characters}: ${v.meanings[0]}`)
     .join("\n");
 
   const prompt = `Please create ${count} Japanese sentences using the following vocabulary. 
@@ -73,9 +75,9 @@ export const getEnglishToJapaneseVocab = async (
   
   // Transform them into the expected format
   return selected.map(vocab => ({
-    japanese: vocab.japanese,
-    english: vocab.english,
-    vocabUsed: [vocab.japanese]
+    japanese: vocab.characters,
+    english: vocab.meanings[0],
+    vocabUsed: [vocab.characters]
   }));
 };
 
@@ -92,4 +94,22 @@ export const getSentences = async (
     // we use the same sentence generation function
     return getJapaneseToEnglishSentences(selectedVocabulary, count, grammarLevel);
   }
+};
+
+export const generateSentences = async (
+  selectedVocabulary: SelectedVocabulary[],
+  count: number,
+  grammarLevel: GrammarLevel,
+  testType: TestType
+): Promise<GeneratedSentence[]> => {
+  const sentenceResponses = await getSentences(selectedVocabulary, count, grammarLevel, testType);
+  
+  return sentenceResponses.map(response => ({
+    id: uuidv4(),
+    createdAt: new Date().toISOString(),
+    japanese: response.japanese,
+    english: response.english,
+    usedVocabulary: response.vocabUsed,
+    testType: testType
+  }));
 };

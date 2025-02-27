@@ -45,9 +45,20 @@ export interface SelectedVocabulary {
   characters: string;
   meanings: string[];
   readings: string[];
+  japanese?: string; // Added for compatibility
+  english?: string; // Added for compatibility
 }
 
 export type GrammarLevel = "beginner" | "intermediate" | "advanced";
+
+export interface SentenceResponse {
+  japanese: string;
+  english: string;
+  vocabUsed: string[];
+  id?: string;
+  createdAt?: string;
+  testType?: TestType;
+}
 
 export interface GeneratedSentence {
   id: string;
