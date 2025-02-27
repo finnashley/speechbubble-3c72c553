@@ -14,7 +14,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
     <div className="min-h-screen bg-background flex flex-col">
       <Header user={user} onLogout={onLogout} />
       <div className="flex-grow flex flex-col">
-        <main className="app-container py-12 mt-6">
+        <main className="app-container py-12 mt-6 h-full flex flex-col">
           {children}
         </main>
       </div>

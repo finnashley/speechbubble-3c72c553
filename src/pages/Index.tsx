@@ -152,7 +152,7 @@ const Index = () => {
 
   return (
     <Layout user={appState.user} onLogout={handleLogout}>
-      <div className="space-y-8 mb-12">
+      <div className={`${isTestMode ? "h-full" : "space-y-8"} mb-12`}>
         {!appState.apiKey || !appState.user ? (
           <>
             <div className="text-center my-12">
@@ -196,10 +196,12 @@ const Index = () => {
                 <span className="ml-3 text-lg">Loading your vocabulary...</span>
               </div>
             ) : isTestMode ? (
-              <TestMode 
-                sentences={testSentences}
-                onExitTest={handleExitTest}
-              />
+              <div className="h-full">
+                <TestMode 
+                  sentences={testSentences}
+                  onExitTest={handleExitTest}
+                />
+              </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <VocabularySelector
