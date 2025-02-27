@@ -152,7 +152,7 @@ const Index = () => {
 
   return (
     <Layout user={appState.user} onLogout={handleLogout}>
-      <div className="space-y-8">
+      <div className="space-y-8 mb-12">
         {!appState.apiKey || !appState.user ? (
           <>
             <div className="text-center my-12">
@@ -174,19 +174,21 @@ const Index = () => {
           </>
         ) : (
           <>
-            <Card className="app-card slide-up">
-              <CardHeader>
-                <CardTitle>Welcome to Speechbubble, {appState.user.username}</CardTitle>
-                <CardDescription>
-                  Level {appState.user.level} on WaniKani. You have access to {appState.vocabulary.length} vocabulary items.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Select vocabulary words you want to practice with, then start a test to practice with generated sentences.
-                </p>
-              </CardContent>
-            </Card>
+            {!isTestMode && (
+              <Card className="app-card slide-up">
+                <CardHeader>
+                  <CardTitle>Welcome to Speechbubble, {appState.user.username}</CardTitle>
+                  <CardDescription>
+                    Level {appState.user.level} on WaniKani. You have access to {appState.vocabulary.length} vocabulary items.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    Select vocabulary words you want to practice with, then start a test to practice with generated sentences.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
             
             {isLoading ? (
               <div className="flex justify-center items-center py-12">
@@ -228,4 +230,3 @@ const Index = () => {
 };
 
 export default Index;
-
