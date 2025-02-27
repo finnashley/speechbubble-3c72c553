@@ -102,9 +102,28 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
     setIsPlaying(false);
   }, [currentIndex]);
 
-  // Function to check user's answer against correct answer
+  // Check if user's answer is valid (not a single vowel or too short)
+  const isValidAnswer = (answer: string): boolean => {
+    const trimmedAnswer = answer.trim();
+    
+    // Check if it's just a single vowel
+    if (/^[aeiou]$/i.test(trimmedAnswer)) {
+      return false;
+    }
+    
+    // Check if it's too short (less than 2 characters)
+    if (trimmedAnswer.length < 2) {
+      return false;
+    }
+    
+    return true;
+  };
+
+  // Improved function to check user's answer against correct answer
   const checkAnswer = () => {
-    if (!userAnswer.trim()) {
+    const trimmedAnswer = userAnswer.trim();
+    
+    if (!trimmedAnswer) {
       toast({
         title: "Empty answer",
         description: "Please type your translation before submitting.",
@@ -113,14 +132,54 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
       return;
     }
 
-    const userAnswerLower = userAnswer.trim().toLowerCase();
+    // Check if answer is valid
+    if (!isValidAnswer(trimmedAnswer)) {
+      toast({
+        title: "Invalid answer",
+        description: "Your answer is too short or too simple to be evaluated.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const userAnswerLower = trimmedAnswer.toLowerCase();
     const correctAnswerLower = currentSentence.english.toLowerCase();
     
-    // Simple fuzzy matching - should match if the answer is roughly correct
-    const isAnswerCorrect = 
-      userAnswerLower === correctAnswerLower ||
-      correctAnswerLower.includes(userAnswerLower) ||
-      userAnswerLower.includes(correctAnswerLower);
+    // More robust matching - check for significant overlap
+    const isAnswerCorrect = (() => {
+      // Exact match
+      if (userAnswerLower === correctAnswerLower) {
+        return true;
+      }
+      
+      // If user answer is very short compared to correct answer, be more strict
+      if (userAnswerLower.length < correctAnswerLower.length * 0.5) {
+        return correctAnswerLower.includes(userAnswerLower) && 
+               userAnswerLower.length > 5; // Only accept if it's a substantial part
+      }
+      
+      // If correct answer contains user answer or vice versa
+      if (correctAnswerLower.includes(userAnswerLower) || 
+          userAnswerLower.includes(correctAnswerLower)) {
+        return true;
+      }
+      
+      // Check word overlap - more than 60% of words match
+      const userWords = userAnswerLower.split(/\s+/).filter(w => w.length > 1);
+      const correctWords = correctAnswerLower.split(/\s+/).filter(w => w.length > 1);
+      
+      if (userWords.length === 0 || correctWords.length === 0) {
+        return false;
+      }
+      
+      const matchingWords = userWords.filter(word => 
+        correctWords.some(correctWord => 
+          correctWord.includes(word) || word.includes(correctWord)
+        )
+      );
+      
+      return matchingWords.length >= Math.min(userWords.length, correctWords.length) * 0.6;
+    })();
     
     setIsCorrect(isAnswerCorrect);
     setIsAnswerSubmitted(true);
