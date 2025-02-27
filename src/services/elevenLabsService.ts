@@ -1,22 +1,30 @@
 
-interface ElevenLabsOptions {
+// Service to handle ElevenLabs Text-to-Speech API
+interface SpeechOptions {
   apiKey: string;
-  voiceId?: string;
+  voice?: string;
   model?: string;
+  stability?: number;
+  similarityBoost?: number;
+  speakingRate?: number;
 }
-
-const defaultVoice = "21m00Tcm4TlvDq8ikWAM"; // Default voice ID (Japanese voice)
-const defaultModel = "eleven_multilingual_v2"; // Best for multi-language support
 
 export const generateSpeech = async (
   text: string,
-  options: ElevenLabsOptions
+  options: SpeechOptions
 ): Promise<string | null> => {
-  const { apiKey, voiceId = defaultVoice, model = defaultModel } = options;
-  
   try {
+    const {
+      apiKey,
+      voice = "pNInz6obpgDQGcFmaJgB", // Adam voice
+      model = "eleven_monolingual_v1",
+      stability = 0.5,
+      similarityBoost = 0.75,
+      speakingRate = 1.0
+    } = options;
+    
     const response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+      `https://api.elevenlabs.io/v1/text-to-speech/${voice}`,
       {
         method: "POST",
         headers: {
@@ -27,22 +35,25 @@ export const generateSpeech = async (
           text,
           model_id: model,
           voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75,
+            stability,
+            similarity_boost: similarityBoost,
+            // Add speaking rate to control speed
+            speaking_rate: speakingRate
           },
         }),
       }
     );
 
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error("ElevenLabs API error:", errorData);
-      return null;
+      throw new Error(`ElevenLabs API error: ${response.status}`);
     }
 
-    // Get the audio data and convert it to a data URL
+    // Convert the response to a blob
     const audioBlob = await response.blob();
+    
+    // Create a URL for the blob
     const audioUrl = URL.createObjectURL(audioBlob);
+    
     return audioUrl;
   } catch (error) {
     console.error("Error generating speech:", error);

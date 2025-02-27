@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import Layout from "@/components/Layout";
@@ -10,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { fetchAllAvailableVocabulary } from "@/services/wanikaniService";
 import { generateSentences } from "@/services/openaiService";
-import { AppState, WaniKaniUser, SelectedVocabulary, GeneratedSentence, GrammarLevel } from "@/lib/types";
+import { AppState, WaniKaniUser, SelectedVocabulary, GeneratedSentence, GrammarLevel, TestType } from "@/lib/types";
 import { Loader2 } from "lucide-react";
 
 const LOCAL_STORAGE_KEY = "speechbubble-app-state";
@@ -104,7 +105,7 @@ const Index = () => {
     setSelectedVocabulary(selected);
   };
 
-  const handleStartTest = async (count: number, grammarLevel: GrammarLevel) => {
+  const handleStartTest = async (count: number, grammarLevel: GrammarLevel, testType: TestType, speakingSpeed?: string) => {
     if (selectedVocabulary.length === 0) {
       toast({
         title: "No vocabulary selected",
@@ -114,14 +115,26 @@ const Index = () => {
       return;
     }
 
+    // Store speaking speed in localStorage for the audio generator
+    if (speakingSpeed) {
+      localStorage.setItem("speechSpeed", speakingSpeed);
+    }
+
     try {
-      const sentences = await generateSentences(selectedVocabulary, count, grammarLevel);
-      setTestSentences(sentences);
+      const sentences = await generateSentences(selectedVocabulary, count, grammarLevel, testType);
+      
+      // Add testType to each sentence
+      const enhancedSentences = sentences.map(sentence => ({
+        ...sentence,
+        testType
+      }));
+      
+      setTestSentences(enhancedSentences);
       setIsTestMode(true);
       
       setAppState((prev) => ({
         ...prev,
-        generatedSentences: [...sentences, ...prev.generatedSentences],
+        generatedSentences: [...enhancedSentences, ...prev.generatedSentences],
       }));
       
       toast({

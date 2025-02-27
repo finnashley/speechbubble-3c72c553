@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { GeneratedSentence } from "@/lib/types";
-import { Loader2, Check, X, ArrowRight, RotateCcw, Volume2, VolumeX } from "lucide-react";
+import { GeneratedSentence, TestType } from "@/lib/types";
+import { Loader2, Check, X, ArrowRight, RotateCcw, Volume2, VolumeX, Headphones, Languages, Type } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { generateSpeech } from "@/services/elevenLabsService";
 
@@ -31,9 +31,13 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
 
   const currentSentence = sentences[currentIndex];
   const isLastSentence = currentIndex === sentences.length - 1;
+  const testType = currentSentence?.testType || "japaneseToEnglish";
+  const isListeningTest = testType === "listening";
+  const isJapaneseToEnglish = testType === "japaneseToEnglish";
+  const isEnglishToJapanese = testType === "englishToJapanese";
 
   // Function to generate speech for the current sentence
-  const generateAudio = async () => {
+  const generateAudio = async (autoPlay = false) => {
     if (!apiKey) {
       const newApiKey = prompt("Please enter your ElevenLabs API key to enable speech:");
       if (!newApiKey) {
@@ -48,16 +52,48 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
       setApiKey(newApiKey);
     }
 
+    const textToSpeak = currentSentence.japanese;
+    
     setIsLoadingAudio(true);
-    const url = await generateSpeech(currentSentence.japanese, { apiKey: apiKey! });
+    // Get the speaking speed from localStorage or use default
+    const speechSpeed = localStorage.getItem("speechSpeed") || "medium";
+    
+    // Map the speaking speed to a stability and similarity boost value
+    let stability = 0.5;
+    let similarityBoost = 0.75;
+    
+    if (speechSpeed === "slow") {
+      stability = 0.8;
+      similarityBoost = 0.3;
+    } else if (speechSpeed === "fast") {
+      stability = 0.3;
+      similarityBoost = 0.8;
+    }
+    
+    const url = await generateSpeech(textToSpeak, { 
+      apiKey: apiKey!,
+      stability,
+      similarityBoost,
+      speakingRate: speechSpeed === "slow" ? 0.7 : speechSpeed === "fast" ? 1.5 : 1
+    });
     setIsLoadingAudio(false);
     
     if (url) {
       setAudioUrl(url);
-      toast({
-        title: "Audio Generated",
-        description: "The sentence audio is ready to play.",
-      });
+      if (autoPlay) {
+        // Set a short timeout to ensure the audio element has loaded
+        setTimeout(() => {
+          if (audioRef.current) {
+            audioRef.current.play();
+            setIsPlaying(true);
+          }
+        }, 100);
+      } else {
+        toast({
+          title: "Audio Generated",
+          description: "The sentence audio is ready to play.",
+        });
+      }
     } else {
       toast({
         title: "Audio Generation Failed",
@@ -66,6 +102,13 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
       });
     }
   };
+
+  // Automatically generate and play audio for listening tests when moving to a new sentence
+  useEffect(() => {
+    if (isListeningTest && currentSentence) {
+      generateAudio(true);
+    }
+  }, [currentIndex, isListeningTest, currentSentence]);
 
   // Function to play/pause the audio
   const toggleAudio = () => {
@@ -107,7 +150,7 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
     const trimmedAnswer = answer.trim();
     
     // Check if it's just a single vowel
-    if (/^[aeiou]$/i.test(trimmedAnswer)) {
+    if (/^[aeiouあいうえお]$/i.test(trimmedAnswer)) {
       return false;
     }
     
@@ -142,11 +185,33 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
       return;
     }
 
+    // Get the expected answer based on test type
+    const correctAnswer = isEnglishToJapanese 
+      ? currentSentence.japanese 
+      : currentSentence.english;
+    
     const userAnswerLower = trimmedAnswer.toLowerCase();
-    const correctAnswerLower = currentSentence.english.toLowerCase();
+    const correctAnswerLower = correctAnswer.toLowerCase();
     
     // More robust matching - check for significant overlap
     const isAnswerCorrect = (() => {
+      // For Japanese answers we need a different approach
+      if (isEnglishToJapanese) {
+        // Simple check - does the answer contain most of the key characters?
+        const userChars = new Set(userAnswerLower.split(''));
+        const correctChars = new Set(correctAnswerLower.split(''));
+        
+        // Count matching characters
+        let matchCount = 0;
+        for (const char of userChars) {
+          if (correctChars.has(char)) matchCount++;
+        }
+        
+        // If more than 70% of characters match, consider it correct
+        return matchCount >= correctChars.size * 0.7;
+      }
+      
+      // English answer checking logic
       // Exact match
       if (userAnswerLower === correctAnswerLower) {
         return true;
@@ -266,22 +331,46 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
     );
   }
 
+  const getTestIcon = () => {
+    if (isListeningTest) return <Headphones className="h-5 w-5 mr-2" />;
+    if (isJapaneseToEnglish) return <Type className="h-5 w-5 mr-2" />;
+    if (isEnglishToJapanese) return <Languages className="h-5 w-5 mr-2" />;
+    return null;
+  };
+
+  const getTestTitle = () => {
+    if (isListeningTest) return "Listening Test";
+    if (isJapaneseToEnglish) return "Japanese to English";
+    if (isEnglishToJapanese) return "English to Japanese";
+    return "Translation Test";
+  };
+
   return (
     <Card className="w-full mt-4 mb-4 slide-up">
       <CardHeader>
         <div className="flex justify-between items-center">
-          <CardTitle>Translation Test</CardTitle>
-          <div className="flex items-center space-x-2">
-            <Switch 
-              id="show-reading" 
-              checked={showReading} 
-              onCheckedChange={setShowReading} 
-            />
-            <Label htmlFor="show-reading">Show Reading</Label>
+          <div className="flex items-center">
+            {getTestIcon()}
+            <CardTitle>{getTestTitle()}</CardTitle>
           </div>
+          {!isListeningTest && isJapaneseToEnglish && (
+            <div className="flex items-center space-x-2">
+              <Switch 
+                id="show-reading" 
+                checked={showReading} 
+                onCheckedChange={setShowReading} 
+              />
+              <Label htmlFor="show-reading">Show Reading</Label>
+            </div>
+          )}
         </div>
         <CardDescription>
-          Translate the Japanese sentence to English. 
+          {isListeningTest 
+            ? "Listen to the Japanese and translate to English" 
+            : isJapaneseToEnglish 
+              ? "Translate the Japanese sentence to English"
+              : "Translate the English sentence to Japanese"
+          }. 
           Progress: {currentIndex + 1} / {sentences.length}
         </CardDescription>
       </CardHeader>
@@ -289,30 +378,42 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
       <CardContent className="space-y-4">
         <div className="p-4 bg-gray-50 dark:bg-gray-900 rounded-md">
           <div className="flex justify-between items-center mb-1">
-            <h3 className="font-bold text-lg">Translate this sentence:</h3>
+            <h3 className="font-bold text-lg">
+              {isListeningTest 
+                ? "Listen and translate:" 
+                : `Translate this ${isJapaneseToEnglish ? "Japanese" : "English"} sentence:`
+              }
+            </h3>
             <div>
-              {audioUrl ? (
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={toggleAudio}
-                  disabled={isLoadingAudio}
-                >
-                  {isPlaying ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-                </Button>
-              ) : (
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={generateAudio}
-                  disabled={isLoadingAudio}
-                >
-                  {isLoadingAudio ? <Loader2 className="h-5 w-5 animate-spin" /> : <Volume2 className="h-5 w-5" />}
-                </Button>
-              )}
+              {isListeningTest || isJapaneseToEnglish ? (
+                audioUrl ? (
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={toggleAudio}
+                    disabled={isLoadingAudio}
+                  >
+                    {isPlaying ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+                  </Button>
+                ) : (
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => generateAudio(isListeningTest)}
+                    disabled={isLoadingAudio}
+                  >
+                    {isLoadingAudio ? <Loader2 className="h-5 w-5 animate-spin" /> : <Volume2 className="h-5 w-5" />}
+                  </Button>
+                )
+              ) : null}
             </div>
           </div>
-          <p className="text-xl mb-2 font-japanese">{currentSentence.japanese}</p>
+          
+          {!isListeningTest && (
+            <p className="text-xl mb-2 font-japanese">
+              {isJapaneseToEnglish ? currentSentence.japanese : currentSentence.english}
+            </p>
+          )}
           
           {/* Hidden audio element */}
           {audioUrl && (
@@ -331,12 +432,25 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
             />
           )}
           
-          {showReading && renderJapaneseWithFurigana()}
+          {isJapaneseToEnglish && showReading && renderJapaneseWithFurigana()}
           
           {isAnswerSubmitted && (
             <div className="mt-4 p-3 rounded-md bg-gray-100 dark:bg-gray-800">
-              <h4 className="font-medium text-sm text-muted-foreground mb-1">Correct translation:</h4>
-              <p className="text-md">{currentSentence.english}</p>
+              <h4 className="font-medium text-sm text-muted-foreground mb-1">
+                Correct translation:
+              </h4>
+              <p className="text-md">
+                {isEnglishToJapanese ? currentSentence.japanese : currentSentence.english}
+              </p>
+              
+              {isListeningTest && isAnswerSubmitted && (
+                <div className="mt-2 pt-2 border-t">
+                  <h4 className="font-medium text-sm text-muted-foreground mb-1">
+                    Original Japanese:
+                  </h4>
+                  <p className="text-md font-japanese">{currentSentence.japanese}</p>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -345,7 +459,7 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
           <Input
             value={userAnswer}
             onChange={(e) => setUserAnswer(e.target.value)}
-            placeholder="Type your English translation here..."
+            placeholder={`Type your ${isEnglishToJapanese ? "Japanese" : "English"} translation here...`}
             disabled={isAnswerSubmitted}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !isAnswerSubmitted) {

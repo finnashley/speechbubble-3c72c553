@@ -1,5 +1,5 @@
 
-import { SelectedVocabulary, GeneratedSentence, GrammarLevel } from "../lib/types";
+import { SelectedVocabulary, GeneratedSentence, GrammarLevel, TestType } from "../lib/types";
 
 const STORAGE_KEY = "openai-api-key";
 
@@ -18,7 +18,8 @@ export const clearApiKey = (): void => {
 export const generateSentences = async (
   vocabulary: SelectedVocabulary[],
   count: number = 1,
-  grammarLevel: GrammarLevel = "beginner"
+  grammarLevel: GrammarLevel = "beginner",
+  testType: TestType = "japaneseToEnglish"
 ): Promise<GeneratedSentence[]> => {
   try {
     // Get API key from localStorage (fallback to env variable for development)
@@ -46,6 +47,53 @@ export const generateSentences = async (
         break;
     }
 
+    let systemPrompt = "";
+    let userPrompt = "";
+
+    if (testType === "englishToJapanese") {
+      systemPrompt = `You are a Japanese language tutor helping students practice vocabulary. 
+        Create ${count} English sentences that can be translated to Japanese using ONLY the following vocabulary words: ${vocabWords.join(', ')}. 
+        The Japanese translations should ONLY use words from this list except for basic grammatical particles (は, が, を, に, で, etc.).
+        ${grammarInstructions}
+        Each sentence should be suitable for a ${grammarLevel} Japanese language learner.
+        Remember: When translated to Japanese, ONLY use the vocabulary words provided and basic particles. No other words allowed.`;
+      
+      userPrompt = `Create ${count} English sentences that can be translated to Japanese using ONLY these words: ${vocabWords.join(', ')}.
+        For each English sentence, provide a Japanese translation that ONLY uses these vocabulary words and basic particles.
+        DO NOT use any other Japanese words that are not in the list.
+        Return the response in the following JSON format:
+        {
+          "sentences": [
+            {
+              "english": "English sentence here",
+              "japanese": "Japanese translation here",
+              "usedVocabulary": ["word1", "word2"]
+            }
+          ]
+        }`;
+    } else {
+      systemPrompt = `You are a Japanese language tutor helping students practice vocabulary. 
+        Create ${count} Japanese sentences using ONLY the following vocabulary words: ${vocabWords.join(', ')}. 
+        DO NOT use any words not in this list except for basic grammatical particles (は, が, を, に, で, etc.).
+        ${grammarInstructions}
+        Each sentence should be suitable for a ${grammarLevel} Japanese language learner.
+        Remember: ONLY use the vocabulary words provided and basic particles. No other words allowed.`;
+      
+      userPrompt = `Create ${count} Japanese sentences using ONLY these words: ${vocabWords.join(', ')}.
+        You may only use basic particles (は, が, を, に, で) in addition to these words.
+        DO NOT use any other words or vocabulary that are not in the list.
+        Return the response in the following JSON format:
+        {
+          "sentences": [
+            {
+              "japanese": "Japanese sentence here",
+              "english": "English translation here",
+              "usedVocabulary": ["word1", "word2"]
+            }
+          ]
+        }`;
+    }
+
     // Make direct request to OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -58,28 +106,11 @@ export const generateSentences = async (
         messages: [
           {
             role: 'system',
-            content: `You are a Japanese language tutor helping students practice vocabulary. 
-            Create ${count} Japanese sentences using ONLY the following vocabulary words: ${vocabWords.join(', ')}. 
-            DO NOT use any words not in this list except for basic grammatical particles (は, が, を, に, で, etc.).
-            ${grammarInstructions}
-            Each sentence should be suitable for a ${grammarLevel} Japanese language learner.
-            Remember: ONLY use the vocabulary words provided and basic particles. No other words allowed.`
+            content: systemPrompt
           },
           {
             role: 'user',
-            content: `Create ${count} Japanese sentences using ONLY these words: ${vocabWords.join(', ')}.
-            You may only use basic particles (は, が, を, に, で) in addition to these words.
-            DO NOT use any other words or vocabulary that are not in the list.
-            Return the response in the following JSON format:
-            {
-              "sentences": [
-                {
-                  "japanese": "Japanese sentence here",
-                  "english": "English translation here",
-                  "usedVocabulary": ["word1", "word2"]
-                }
-              ]
-            }`
+            content: userPrompt
           }
         ],
         temperature: 0.7,
@@ -111,6 +142,7 @@ export const generateSentences = async (
       japanese: sentence.japanese,
       english: sentence.english,
       usedVocabulary: sentence.usedVocabulary || vocabWords,
+      testType: testType,
     }));
   } catch (error) {
     console.error("Error generating sentences:", error);

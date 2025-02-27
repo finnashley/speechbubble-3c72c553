@@ -64,3 +64,12 @@ export interface AppState {
   vocabulary: SelectedVocabulary[];
   generatedSentences: GeneratedSentence[];
 }
+
+export type TestType = "listening" | "japaneseToEnglish" | "englishToJapanese";
+
+export interface TestSettings {
+  count: number;
+  grammarLevel: GrammarLevel;
+  testType: TestType;
+  speakingSpeed?: "slow" | "medium" | "fast";
+}
