@@ -42,7 +42,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
               rel="noopener noreferrer"
               className="text-sm text-primary hover:text-primary/80 transition-colors"
             >
-              Connect with WaniKani
+              Use WaniKani API
             </a>
           </div>
         )}
