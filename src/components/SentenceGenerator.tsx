@@ -28,6 +28,10 @@ const SentenceGenerator: React.FC<SentenceGeneratorProps> = ({
   const storedApiKey = getStoredApiKey();
   const hasApiKey = !!storedApiKey;
 
+  const handleSliderChange = (values: number[]) => {
+    setCount(values[0]);
+  };
+
   const handleGenerate = async () => {
     if (selectedVocabulary.length === 0) {
       toast({
@@ -135,7 +139,7 @@ const SentenceGenerator: React.FC<SentenceGeneratorProps> = ({
               min={1}
               max={5}
               step={1}
-              onValueChange={(values) => setCount(values[0])}
+              onValueChange={handleSliderChange}
             />
           </div>
 
