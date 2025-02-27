@@ -29,23 +29,29 @@ export const fetchUser = async (apiKey: string): Promise<WaniKaniUser> => {
   }
 };
 
-// Fetch assignments to get SRS status
+// Fetch assignments to get SRS status and available vocabulary
 export const fetchAssignments = async (
   apiKey: string
 ): Promise<Record<number, string>> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/assignments?subject_types=vocabulary`, {
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Wanikani-Revision": "20170710",
-      },
-    });
+    // Get all assignments specifically for vocabulary items that have been started
+    // Adding started=true parameter to only get items that have been started in SRS
+    const response = await fetch(
+      `${API_BASE_URL}/assignments?subject_types=vocabulary&started=true`, 
+      {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Wanikani-Revision": "20170710",
+        },
+      }
+    );
 
     if (!response.ok) {
       throw new Error(`WaniKani API Error: ${response.statusText}`);
     }
 
     const data = await response.json();
+    console.log(`Found ${data.data.length} started vocabulary assignments`);
     
     // Create a map of subject_id to srs_stage
     const assignmentMap: Record<number, string> = {};
@@ -66,6 +72,15 @@ export const fetchVocabulary = async (
   srsFilter: boolean = true
 ): Promise<SelectedVocabulary[]> => {
   try {
+    // First, if we need SRS filtering, get the assignments to know which items have been started
+    let startedSubjectIds: number[] = [];
+    if (srsFilter) {
+      const assignments = await fetchAssignments(apiKey);
+      startedSubjectIds = Object.keys(assignments).map(id => parseInt(id));
+      console.log(`Filtering to ${startedSubjectIds.length} started vocabulary items`);
+    }
+
+    // Build the URL for fetching vocabulary
     let url = `${API_BASE_URL}/subjects?types=vocabulary`;
     
     // Add level filter if provided
@@ -86,6 +101,7 @@ export const fetchVocabulary = async (
 
     const data = await response.json();
     const allVocabulary: WaniKaniVocabulary[] = data.data;
+    console.log(`Fetched ${allVocabulary.length} total vocabulary items before filtering`);
     
     // Process response into a simplified vocabulary format
     let processedVocabulary: SelectedVocabulary[] = allVocabulary.map((vocab) => ({
@@ -96,16 +112,12 @@ export const fetchVocabulary = async (
     }));
 
     // If SRS filtering is enabled, filter by started items
-    if (srsFilter) {
-      // Fetch assignments to get SRS status
-      const assignments = await fetchAssignments(apiKey);
-      
-      // Filter vocabulary to only include items that have been started in SRS
+    if (srsFilter && startedSubjectIds.length > 0) {
       processedVocabulary = processedVocabulary.filter(vocab => 
-        assignments[vocab.id] !== undefined && assignments[vocab.id] !== null
+        startedSubjectIds.includes(vocab.id)
       );
       
-      console.log(`Filtered to ${processedVocabulary.length} vocabulary items with SRS data`);
+      console.log(`Filtered to ${processedVocabulary.length} vocabulary items with started SRS status`);
     }
 
     return processedVocabulary;
