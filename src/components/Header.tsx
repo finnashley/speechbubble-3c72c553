@@ -24,8 +24,9 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
         
         {user ? (
           <div className="flex items-center space-x-4">
-            <div className="text-sm text-right">
+            <div className="text-sm flex items-center gap-2">
               <p className="font-medium">{user.username}</p>
+              <span className="text-muted-foreground">•</span>
               <p className="text-muted-foreground">Level {user.level}</p>
             </div>
             <Button 
