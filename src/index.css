@@ -14,7 +14,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
  
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 0 84.2% 60.2%; /* Changed to red */
     --primary-foreground: 210 40% 98%;
  
     --secondary: 210 40% 96.1%;
@@ -46,8 +46,8 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
  
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 0 84.2% 60.2%; /* Changed to red */
+    --primary-foreground: 210 40% 98%;
  
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -72,12 +72,33 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground p-4 md:p-6 lg:p-8;
+    @apply bg-background text-foreground;
+    padding: 0;
+    margin: 0;
     min-height: 100vh;
   }
   
   .font-japanese {
     font-family: "Noto Sans JP", sans-serif;
+  }
+}
+
+/* App container with proper margins */
+.app-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+@media (min-width: 640px) {
+  .app-container {
+    padding: 0 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .app-container {
+    padding: 0 2rem;
   }
 }
 
@@ -98,12 +119,13 @@
 }
 
 .app-card {
-  @apply bg-card text-card-foreground p-6 rounded-lg shadow-md transition-all duration-300;
+  @apply bg-card text-card-foreground rounded-lg shadow-sm;
+  padding: 1.5rem;
   margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
 }
 
 .app-card:hover {
-  @apply shadow-lg;
+  @apply shadow-md;
   transform: translateY(-2px);
 }
-
