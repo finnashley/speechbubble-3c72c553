@@ -1,4 +1,3 @@
-
 // WaniKani API Types
 export interface WaniKaniUser {
   id: string;
@@ -55,6 +54,7 @@ export interface GeneratedSentence {
   japanese: string;
   english: string;
   usedVocabulary: string[];
+  incorrectAnswer?: boolean;
 }
 
 // User settings and preferences

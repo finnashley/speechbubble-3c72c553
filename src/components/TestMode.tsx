@@ -41,7 +41,6 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
     const correctAnswerLower = currentSentence.english.toLowerCase();
     
     // Simple fuzzy matching - should match if the answer is roughly correct
-    // We could improve this with a better algorithm in the future
     const isAnswerCorrect = 
       userAnswerLower === correctAnswerLower ||
       correctAnswerLower.includes(userAnswerLower) ||
@@ -49,6 +48,11 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
     
     setIsCorrect(isAnswerCorrect);
     setIsAnswerSubmitted(true);
+    
+    // Mark the sentence as incorrect if the answer was wrong
+    if (!isAnswerCorrect) {
+      currentSentence.incorrectAnswer = true;
+    }
     
     setScore(prev => ({
       correct: prev.correct + (isAnswerCorrect ? 1 : 0),
