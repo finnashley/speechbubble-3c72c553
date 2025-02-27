@@ -20,7 +20,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
       </main>
       <footer className="border-t border-border py-6 w-full">
         <div className="app-container text-center text-sm text-muted-foreground space-y-2">
-          <p>Speechbubble - Practice Japanese with your WaniKani vocabulary</p>
+          <p>Speechbubble - Infinite sentence practice</p>
           <div className="text-xs max-w-2xl mx-auto">
             <p>
               Speechbubble is not affiliated with, associated with, or endorsed by Tofugu LLC or WaniKani. 
@@ -35,4 +35,3 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
 };
 
 export default Layout;
-

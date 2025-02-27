@@ -26,7 +26,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
           <MessageCircle className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-medium">Speechbubble</h1>
           <div className="h-6 w-px bg-border mx-1 md:mx-3"></div>
-          <p className="text-sm text-muted-foreground">Sentence Practice</p>
+          <p className="text-sm text-muted-foreground">Infinite sentence practice</p>
         </div>
         
         {user ? (
