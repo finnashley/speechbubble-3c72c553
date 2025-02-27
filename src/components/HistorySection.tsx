@@ -9,13 +9,16 @@ interface HistorySectionProps {
   sentences: GeneratedSentence[];
   onClearHistory: () => void;
   onDeleteSentence: (id: string) => void;
+  showOnlyIfHasHistory?: boolean;
 }
 
 const HistorySection: React.FC<HistorySectionProps> = ({
   sentences,
   onClearHistory,
   onDeleteSentence,
+  showOnlyIfHasHistory = false,
 }) => {
+  // If there are no sentences and we're in "only show if has history" mode, don't render anything
   if (sentences.length === 0) {
     return null;
   }

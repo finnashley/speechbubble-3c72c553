@@ -170,6 +170,7 @@ const Index = () => {
               sentences={appState.generatedSentences}
               onClearHistory={handleClearHistory}
               onDeleteSentence={handleDeleteSentence}
+              showOnlyIfHasHistory={false}
             />
           </>
         )}
