@@ -94,6 +94,8 @@
   margin: 0 auto;
   padding: 0 1.5rem;
   height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 @media (min-width: 640px) {

@@ -152,7 +152,7 @@ const Index = () => {
 
   return (
     <Layout user={appState.user} onLogout={handleLogout}>
-      <div className={`${isTestMode ? "h-full" : "space-y-8"} mb-12`}>
+      <div className={`${isTestMode ? "flex-grow flex flex-col" : "space-y-8"}`}>
         {!appState.apiKey || !appState.user ? (
           <>
             <div className="text-center my-12">
@@ -196,7 +196,7 @@ const Index = () => {
                 <span className="ml-3 text-lg">Loading your vocabulary...</span>
               </div>
             ) : isTestMode ? (
-              <div className="h-full">
+              <div className="flex-grow flex flex-col">
                 <TestMode 
                   sentences={testSentences}
                   onExitTest={handleExitTest}
