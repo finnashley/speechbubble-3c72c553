@@ -11,9 +11,9 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
   return (
-    <div className="min-h-screen bg-background flex flex-col w-full overflow-x-hidden max-w-full">
+    <div className="min-h-screen bg-background flex flex-col w-full overflow-x-hidden">
       <Header user={user} onLogout={onLogout} />
-      <main className="flex-grow py-6 w-full overflow-x-hidden max-w-full">
+      <main className="flex-grow py-6 w-full overflow-x-hidden">
         <div className="app-container h-full">
           {children}
         </div>

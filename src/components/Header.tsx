@@ -11,20 +11,20 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
   return (
-    <header className="border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-50 w-full">
-      <div className="app-container h-20 flex items-center justify-between">
-        <div className="flex items-center gap-2 sm:gap-3 overflow-hidden">
-          <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6 text-primary flex-shrink-0" />
-          <h1 className="text-xl sm:text-2xl font-medium truncate">Speechbubble</h1>
-          <div className="hidden xs:block h-6 w-px bg-border mx-1 md:mx-3 flex-shrink-0"></div>
-          <p className="hidden xs:block text-sm text-muted-foreground truncate">Sentence Practice</p>
+    <header className="border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-50">
+      <div className="container mx-auto px-4 h-20 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <MessageCircle className="h-6 w-6 text-primary" />
+          <h1 className="text-2xl font-medium">Speechbubble</h1>
+          <div className="h-6 w-px bg-border mx-1 md:mx-3"></div>
+          <p className="text-sm text-muted-foreground">Sentence Practice</p>
         </div>
         
         {user ? (
-          <div className="flex items-center gap-2 sm:gap-4 ml-2 flex-shrink-0">
-            <div className="text-xs sm:text-sm truncate max-w-[120px] sm:max-w-none">
+          <div className="flex items-center gap-4">
+            <div className="text-sm">
               <span className="font-medium">{user.username}</span>
-              <span className="mx-1 sm:mx-2 text-muted-foreground">•</span>
+              <span className="mx-2 text-muted-foreground">•</span>
               <span className="text-muted-foreground">Level {user.level}</span>
             </div>
             <Button 
@@ -34,7 +34,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
               className="flex items-center gap-1"
             >
               <LogOut className="h-4 w-4" />
-              <span className="hidden xs:inline">Logout</span>
+              Logout
             </Button>
           </div>
         ) : (
