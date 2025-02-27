@@ -68,16 +68,21 @@ const Index = () => {
   };
 
   const handleLogout = () => {
-    setAppState((prev) => ({
-      ...prev,
+    // Clear the entire app state including generated sentences
+    setAppState({
       apiKey: null,
       user: null,
       vocabulary: [],
-    }));
+      generatedSentences: [],
+    });
     setSelectedVocabulary([]);
+    
+    // Clear the localStorage to ensure nothing persists
+    localStorage.removeItem(LOCAL_STORAGE_KEY);
+    
     toast({
       title: "Logged out",
-      description: "You have been logged out of WaniKani.",
+      description: "You have been logged out of WaniKani. Your history has been cleared.",
     });
   };
 
