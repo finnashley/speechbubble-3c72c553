@@ -50,7 +50,7 @@ const WaniKaniAuth: React.FC<WaniKaniAuthProps> = ({ onAuthenticated }) => {
   return (
     <Card className="app-card max-w-md w-full mx-auto slide-up">
       <CardHeader>
-        <CardTitle>Setup Speechbubble</CardTitle>
+        <CardTitle>{showAdditionalKeys ? "Setup Speechbubble" : "Connect to WaniKani"}</CardTitle>
         <CardDescription>
           {!showAdditionalKeys 
             ? "Enter your WaniKani API key to access your vocabulary."
