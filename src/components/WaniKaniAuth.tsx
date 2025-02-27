@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { fetchUser } from "../services/wanikaniService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,38 @@ const WaniKaniAuth: React.FC<WaniKaniAuthProps> = ({ onAuthenticated }) => {
   const [error, setError] = useState<string | null>(null);
   const [showAdditionalKeys, setShowAdditionalKeys] = useState(false);
   const { user } = useAuth();
+
+  // Check for saved API keys in the profile and load them if they exist
+  useEffect(() => {
+    const loadProfileKeys = async () => {
+      if (!user) return;
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('wanikani_key, openai_key, elevenlabs_key')
+        .eq('id', user.id)
+        .single();
+      
+      if (error) {
+        console.error("Error loading profile keys:", error);
+        return;
+      }
+      
+      if (data?.wanikani_key) {
+        setApiKey(data.wanikani_key);
+      }
+      
+      if (data?.openai_key) {
+        setOpenaiKey(data.openai_key);
+      }
+      
+      if (data?.elevenlabs_key) {
+        setElevenLabsKey(data.elevenlabs_key);
+      }
+    };
+    
+    loadProfileKeys();
+  }, [user]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
