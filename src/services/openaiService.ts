@@ -60,13 +60,16 @@ export const generateSentences = async (
             role: 'system',
             content: `You are a Japanese language tutor helping students practice vocabulary. 
             Create ${count} Japanese sentences using ONLY the following vocabulary words: ${vocabWords.join(', ')}. 
-            You may use basic grammatical particles and common words not in the list (like です, は, が, を, に, で, etc.).
+            DO NOT use any words not in this list except for basic grammatical particles (は, が, を, に, で, etc.).
             ${grammarInstructions}
-            Each sentence should be suitable for a ${grammarLevel} Japanese language learner.`
+            Each sentence should be suitable for a ${grammarLevel} Japanese language learner.
+            Remember: ONLY use the vocabulary words provided and basic particles. No other words allowed.`
           },
           {
             role: 'user',
-            content: `Create ${count} Japanese sentences using only these words: ${vocabWords.join(', ')}.
+            content: `Create ${count} Japanese sentences using ONLY these words: ${vocabWords.join(', ')}.
+            You may only use basic particles (は, が, を, に, で) in addition to these words.
+            DO NOT use any other words or vocabulary that are not in the list.
             Return the response in the following JSON format:
             {
               "sentences": [
