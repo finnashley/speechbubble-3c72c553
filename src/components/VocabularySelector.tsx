@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Book } from "lucide-react";
 
 interface VocabularySelectorProps {
   vocabulary: SelectedVocabulary[];
@@ -18,6 +19,8 @@ const VocabularySelector: React.FC<VocabularySelectorProps> = ({
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredVocabulary, setFilteredVocabulary] = useState<SelectedVocabulary[]>(vocabulary);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 30; // Show 30 items per page to reduce overwhelming display
 
   useEffect(() => {
     if (searchTerm) {
@@ -27,6 +30,7 @@ const VocabularySelector: React.FC<VocabularySelectorProps> = ({
           vocab.meanings.some((m) => m.toLowerCase().includes(searchTerm.toLowerCase()))
       );
       setFilteredVocabulary(filtered);
+      setCurrentPage(1); // Reset to first page when search changes
     } else {
       setFilteredVocabulary(vocabulary);
     }
@@ -59,10 +63,31 @@ const VocabularySelector: React.FC<VocabularySelectorProps> = ({
     setSelectedIds([]);
   };
 
+  // Pagination
+  const totalPages = Math.ceil(filteredVocabulary.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, filteredVocabulary.length);
+  const currentItems = filteredVocabulary.slice(startIndex, endIndex);
+
+  const nextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const prevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
   return (
     <Card className="app-card w-full slide-up">
       <CardHeader>
-        <CardTitle>Select Vocabulary</CardTitle>
+        <div className="flex items-center">
+          <Book className="mr-2 h-5 w-5 text-primary" />
+          <CardTitle>Select Vocabulary</CardTitle>
+        </div>
         <CardDescription>
           Choose the vocabulary words to use in your practice sentences.
         </CardDescription>
@@ -110,11 +135,12 @@ const VocabularySelector: React.FC<VocabularySelectorProps> = ({
         </div>
         
         <div className="text-sm text-muted-foreground">
-          {selectedIds.length} of {vocabulary.length} words selected
+          {selectedIds.length} of {vocabulary.length} words selected | 
+          Showing {startIndex + 1}-{endIndex} of {filteredVocabulary.length}
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 mt-4 max-h-80 overflow-y-auto p-1">
-          {filteredVocabulary.map((vocab) => (
+          {currentItems.map((vocab) => (
             <div
               key={vocab.id}
               className={`border rounded-lg p-3 transition-colors ${
@@ -144,6 +170,30 @@ const VocabularySelector: React.FC<VocabularySelectorProps> = ({
             </div>
           ))}
         </div>
+        
+        {totalPages > 1 && (
+          <div className="flex justify-between items-center mt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={prevPage}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </Button>
+            <span className="text-sm">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={nextPage}
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

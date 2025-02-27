@@ -4,7 +4,7 @@ import { SelectedVocabulary, GeneratedSentence } from "../lib/types";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, AlertCircle, Key } from "lucide-react";
+import { Loader2, AlertCircle, Key, MessageCircle } from "lucide-react";
 import { generateSentences, getStoredApiKey, saveApiKey } from "../services/openaiService";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -88,7 +88,10 @@ const SentenceGenerator: React.FC<SentenceGeneratorProps> = ({
     <>
       <Card className="app-card w-full slide-up">
         <CardHeader>
-          <CardTitle>Generate Sentences</CardTitle>
+          <div className="flex items-center">
+            <MessageCircle className="mr-2 h-5 w-5 text-primary" />
+            <CardTitle>Generate Sentences</CardTitle>
+          </div>
           <CardDescription>
             Create practice sentences using your selected vocabulary.
           </CardDescription>
@@ -136,24 +139,17 @@ const SentenceGenerator: React.FC<SentenceGeneratorProps> = ({
             />
           </div>
 
-          <div className="p-4 bg-secondary rounded-lg">
-            <h4 className="font-medium mb-2">Selected Vocabulary ({selectedVocabulary.length})</h4>
-            <div className="flex flex-wrap gap-2">
-              {selectedVocabulary.length > 0 ? (
-                selectedVocabulary.map((vocab) => (
-                  <span
-                    key={vocab.id}
-                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary"
-                  >
-                    {vocab.characters}
-                  </span>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  No vocabulary selected. Please select some words.
-                </p>
-              )}
+          <div className="text-sm">
+            <div className="flex items-center mb-2">
+              <span className="font-medium">Selected vocabulary:</span>
+              <span className="ml-2 text-muted-foreground">{selectedVocabulary.length} words</span>
             </div>
+            
+            {selectedVocabulary.length === 0 && (
+              <p className="text-muted-foreground">
+                No vocabulary selected. Please select some words from the list.
+              </p>
+            )}
           </div>
         </CardContent>
         <CardFooter className="flex flex-col sm:flex-row gap-2">

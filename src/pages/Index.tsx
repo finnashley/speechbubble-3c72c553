@@ -11,7 +11,7 @@ import { fetchAllAvailableVocabulary } from "@/services/wanikaniService";
 import { AppState, WaniKaniUser, SelectedVocabulary, GeneratedSentence } from "@/lib/types";
 import { Loader2 } from "lucide-react";
 
-const LOCAL_STORAGE_KEY = "wanikani-vocab-app-state";
+const LOCAL_STORAGE_KEY = "speechbubble-app-state";
 
 const Index = () => {
   const [appState, setAppState] = useState<AppState>({
@@ -111,7 +111,7 @@ const Index = () => {
         {!appState.apiKey || !appState.user ? (
           <>
             <div className="text-center my-12">
-              <h1 className="text-4xl font-bold mb-2">Japanese Vocabulary Practice</h1>
+              <h1 className="text-4xl font-bold mb-2">Speechbubble</h1>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                 Generate custom practice sentences using your WaniKani vocabulary
               </p>
@@ -131,7 +131,7 @@ const Index = () => {
           <>
             <Card className="app-card slide-up">
               <CardHeader>
-                <CardTitle>Welcome, {appState.user.username}</CardTitle>
+                <CardTitle>Welcome to Speechbubble, {appState.user.username}</CardTitle>
                 <CardDescription>
                   Level {appState.user.level} on WaniKani. You have access to {appState.vocabulary.length} vocabulary items.
                 </CardDescription>
