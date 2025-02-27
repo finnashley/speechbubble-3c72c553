@@ -11,12 +11,12 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header user={user} onLogout={onLogout} />
-      <main className="app-container pt-6 pb-8">
+      <main className="app-container flex-grow py-8">
         {children}
       </main>
-      <footer className="border-t border-border py-6">
+      <footer className="border-t border-border py-6 mt-auto">
         <div className="app-container text-center text-sm text-muted-foreground">
           <p>Speechbubble - Practice Japanese with your WaniKani vocabulary</p>
         </div>
