@@ -126,31 +126,51 @@ const Index = () => {
     }
 
     try {
-      const sentences = await generateSentences(selectedVocabulary, count, grammarLevel, testType);
-      
-      // Add testType to each sentence
-      const enhancedSentences = sentences.map(sentence => ({
-        ...sentence,
-        testType
-      }));
-      
-      setTestSentences(enhancedSentences);
-      setIsTestMode(true);
-      
-      setAppState((prev) => ({
-        ...prev,
-        generatedSentences: [...enhancedSentences, ...prev.generatedSentences],
-      }));
-      
-      toast({
-        title: "Test ready",
-        description: `Generated ${sentences.length} sentences for your practice test.`,
-      });
+      // Special handling for English to Japanese vocabulary tests
+      if (testType === "englishToJapanese") {
+        // For vocab-only tests, we generate test data directly from selected vocabulary
+        const enhancedSentences = await generateSentences(selectedVocabulary, count, grammarLevel, testType);
+        
+        setTestSentences(enhancedSentences);
+        setIsTestMode(true);
+        
+        setAppState((prev) => ({
+          ...prev,
+          generatedSentences: [...enhancedSentences, ...prev.generatedSentences],
+        }));
+        
+        toast({
+          title: "Test ready",
+          description: `Generated ${enhancedSentences.length} vocabulary items for your practice test.`,
+        });
+      } else {
+        // For sentence-based tests, use the OpenAI service
+        const sentences = await generateSentences(selectedVocabulary, count, grammarLevel, testType);
+        
+        // Add testType to each sentence
+        const enhancedSentences = sentences.map(sentence => ({
+          ...sentence,
+          testType
+        }));
+        
+        setTestSentences(enhancedSentences);
+        setIsTestMode(true);
+        
+        setAppState((prev) => ({
+          ...prev,
+          generatedSentences: [...enhancedSentences, ...prev.generatedSentences],
+        }));
+        
+        toast({
+          title: "Test ready",
+          description: `Generated ${sentences.length} sentences for your practice test.`,
+        });
+      }
     } catch (error) {
       console.error("Error generating sentences:", error);
       toast({
         title: "Error",
-        description: "Failed to generate test sentences. Please try again.",
+        description: "Failed to generate test content. Please try again.",
         variant: "destructive",
       });
     }
@@ -211,7 +231,7 @@ const Index = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Select vocabulary words you want to practice with, then start a test to practice with generated sentences.
+                  Select vocabulary words you want to practice with, then start a test to practice with generated sentences or individual vocabulary.
                 </p>
               </CardContent>
             </Card>

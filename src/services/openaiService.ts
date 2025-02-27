@@ -1,4 +1,3 @@
-
 import { SelectedVocabulary, GeneratedSentence, GrammarLevel, TestType } from "../lib/types";
 
 const STORAGE_KEY = "openai-api-key";
@@ -50,28 +49,30 @@ export const generateSentences = async (
     let systemPrompt = "";
     let userPrompt = "";
 
+    // Special case for vocabulary-only English to Japanese tests
     if (testType === "englishToJapanese") {
-      systemPrompt = `You are a Japanese language tutor helping students practice vocabulary. 
-        Create ${count} English sentences that can be translated to Japanese using ONLY the following vocabulary words: ${vocabWords.join(', ')}. 
-        The Japanese translations should ONLY use words from this list except for basic grammatical particles (は, が, を, に, で, etc.).
-        ${grammarInstructions}
-        Each sentence should be suitable for a ${grammarLevel} Japanese language learner.
-        Remember: When translated to Japanese, ONLY use the vocabulary words provided and basic particles. No other words allowed.`;
+      // Randomly select a subset of vocabulary if more items are requested than available
+      const selectedVocab = vocabulary.length <= count 
+        ? vocabulary 
+        : shuffleArray([...vocabulary]).slice(0, count);
       
-      userPrompt = `Create ${count} English sentences that can be translated to Japanese using ONLY these words: ${vocabWords.join(', ')}.
-        For each English sentence, provide a Japanese translation that ONLY uses these vocabulary words and basic particles.
-        DO NOT use any other Japanese words that are not in the list.
-        Return the response in the following JSON format:
-        {
-          "sentences": [
-            {
-              "english": "English sentence here",
-              "japanese": "Japanese translation here",
-              "usedVocabulary": ["word1", "word2"]
-            }
-          ]
-        }`;
-    } else {
+      // Create direct vocabulary mapping rather than sentences
+      const result: GeneratedSentence[] = selectedVocab.map((vocab, index) => {
+        // Use the primary English meaning as the prompt
+        const englishMeaning = vocab.meanings[0];
+        
+        return {
+          id: `vocab-${Date.now()}-${index}`,
+          createdAt: new Date().toISOString(),
+          english: englishMeaning,
+          japanese: vocab.characters,
+          usedVocabulary: [vocab.characters],
+          testType: "englishToJapanese",
+        };
+      });
+      
+      return result;
+    } else if (testType === "listening" || testType === "japaneseToEnglish") {
       systemPrompt = `You are a Japanese language tutor helping students practice vocabulary. 
         Create ${count} Japanese sentences using ONLY the following vocabulary words: ${vocabWords.join(', ')}. 
         DO NOT use any words not in this list except for basic grammatical particles (は, が, を, に, で, etc.).
@@ -92,9 +93,36 @@ export const generateSentences = async (
             }
           ]
         }`;
+    } else {
+      // This branch shouldn't be reached, but keeping it as a fallback
+      systemPrompt = `You are a Japanese language tutor helping students practice vocabulary. 
+        Create ${count} English sentences that can be translated to Japanese using ONLY the following vocabulary words: ${vocabWords.join(', ')}. 
+        The Japanese translations should ONLY use words from this list except for basic grammatical particles (は, が, を, に, で, etc.).
+        ${grammarInstructions}
+        Each sentence should be suitable for a ${grammarLevel} Japanese language learner.
+        Remember: When translated to Japanese, ONLY use the vocabulary words provided and basic particles. No other words allowed.`;
+      
+      userPrompt = `Create ${count} English sentences that can be translated to Japanese using ONLY these words: ${vocabWords.join(', ')}.
+        For each English sentence, provide a Japanese translation that ONLY uses these vocabulary words and basic particles.
+        DO NOT use any other Japanese words that are not in the list.
+        Return the response in the following JSON format:
+        {
+          "sentences": [
+            {
+              "english": "English sentence here",
+              "japanese": "Japanese translation here",
+              "usedVocabulary": ["word1", "word2"]
+            }
+          ]
+        }`;
     }
 
-    // Make direct request to OpenAI API
+    // If we're just using vocab, we don't need to call OpenAI API
+    if (testType === "englishToJapanese") {
+      return Promise.resolve([]);
+    }
+
+    // Make direct request to OpenAI API only for sentence-based tests
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -149,3 +177,13 @@ export const generateSentences = async (
     throw error;
   }
 };
+
+// Helper function to randomly shuffle an array
+function shuffleArray<T>(array: T[]): T[] {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+}

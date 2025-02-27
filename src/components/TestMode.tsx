@@ -54,6 +54,11 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
   const isListeningTest = testType === "listening";
   const isJapaneseToEnglish = testType === "japaneseToEnglish";
   const isEnglishToJapanese = testType === "englishToJapanese";
+  
+  // Check if we're in vocabulary mode (English to Japanese without sentences)
+  const isVocabMode = isEnglishToJapanese && 
+                     (!currentSentence?.japanese?.includes(' ') || 
+                      !currentSentence?.english?.includes(' '));
 
   // Function to generate speech for the current sentence
   const generateAudio = async (autoPlay = false) => {
@@ -169,6 +174,11 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
   const isValidAnswer = (answer: string): boolean => {
     const trimmedAnswer = answer.trim();
     
+    // For vocabulary mode, we can be less strict with answer length
+    if (isVocabMode) {
+      return trimmedAnswer.length > 0;
+    }
+    
     // Check if it's just a single vowel
     if (/^[aeiouあいうえお]$/i.test(trimmedAnswer)) {
       return false;
@@ -215,6 +225,15 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
     
     // More robust matching - check for significant overlap
     const isAnswerCorrect = (() => {
+      // For vocabulary mode, we need a more exact match
+      if (isVocabMode) {
+        // For Japanese answers, compare the characters
+        return userAnswerLower === correctAnswerLower ||
+               // Allow for slight variations or missing particles
+               (userAnswerLower.replace(/[はがをにで]/g, '') === 
+                correctAnswerLower.replace(/[はがをにで]/g, ''));
+      }
+      
       // For Japanese answers we need a different approach
       if (isEnglishToJapanese) {
         // Simple check - does the answer contain most of the key characters?
@@ -361,8 +380,22 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
   const getTestTitle = () => {
     if (isListeningTest) return "Listening Test";
     if (isJapaneseToEnglish) return "Japanese to English";
-    if (isEnglishToJapanese) return "English to Japanese";
+    if (isEnglishToJapanese) return isVocabMode ? "English to Japanese Vocabulary" : "English to Japanese";
     return "Translation Test";
+  };
+
+  const getTestPrompt = () => {
+    if (isListeningTest) return "Listen to the Japanese and translate to English";
+    if (isJapaneseToEnglish) return "Translate the Japanese sentence to English";
+    if (isEnglishToJapanese) return isVocabMode 
+      ? "Translate the English vocabulary to Japanese" 
+      : "Translate the English sentence to Japanese";
+    return "Translate the sentence";
+  };
+
+  const getProgressLabel = () => {
+    const itemType = isVocabMode ? "words" : "sentences";
+    return `Progress: ${currentIndex + 1} / ${sentences.length} ${itemType}`;
   };
 
   return (
@@ -385,13 +418,7 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
           )}
         </div>
         <CardDescription>
-          {isListeningTest 
-            ? "Listen to the Japanese and translate to English" 
-            : isJapaneseToEnglish 
-              ? "Translate the Japanese sentence to English"
-              : "Translate the English sentence to Japanese"
-          }. 
-          Progress: {currentIndex + 1} / {sentences.length}
+          {getTestPrompt()}. {getProgressLabel()}
         </CardDescription>
       </CardHeader>
 
@@ -401,7 +428,7 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
             <h3 className="font-bold text-lg">
               {isListeningTest 
                 ? "Listen and translate:" 
-                : `Translate this ${isJapaneseToEnglish ? "Japanese" : "English"} sentence:`
+                : `Translate this ${isJapaneseToEnglish ? "Japanese" : "English"}:`
               }
             </h3>
             <div>
@@ -430,7 +457,7 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
           </div>
           
           {!isListeningTest && (
-            <p className="text-xl mb-2 font-japanese">
+            <p className={`text-xl mb-2 ${isJapaneseToEnglish ? "font-japanese" : ""}`}>
               {isJapaneseToEnglish ? currentSentence.japanese : currentSentence.english}
             </p>
           )}
@@ -459,7 +486,7 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
               <h4 className="font-medium text-sm text-muted-foreground mb-1">
                 Correct translation:
               </h4>
-              <p className="text-md">
+              <p className={`text-md ${isEnglishToJapanese ? "font-japanese" : ""}`}>
                 {isEnglishToJapanese ? currentSentence.japanese : currentSentence.english}
               </p>
               
@@ -491,7 +518,9 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
 
         <div className="flex justify-between items-center text-sm">
           <span>Score: {score.correct} / {score.total}</span>
-          <span>Used vocabulary: {currentSentence.usedVocabulary.join(", ")}</span>
+          {!isVocabMode && (
+            <span>Used vocabulary: {currentSentence.usedVocabulary.join(", ")}</span>
+          )}
         </div>
       </CardContent>
 
@@ -513,7 +542,7 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
             {isLastSentence ? (
               <>Finish Test</>
             ) : (
-              <>Next Sentence <ArrowRight className="ml-2 h-4 w-4" /></>
+              <>Next {isVocabMode ? "Word" : "Sentence"} <ArrowRight className="ml-2 h-4 w-4" /></>
             )}
           </Button>
         ) : (

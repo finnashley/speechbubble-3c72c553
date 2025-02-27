@@ -50,7 +50,7 @@ const TEST_TYPES: { value: TestType; label: string; description: string; icon: R
   {
     value: "englishToJapanese",
     label: "English to Japanese",
-    description: "Read English sentences and translate them to Japanese",
+    description: "Read English vocabulary and translate to Japanese",
     icon: <Languages className="h-5 w-5" />,
   },
 ];
@@ -98,6 +98,10 @@ const TestSetup: React.FC<TestSetupProps> = ({
       setIsStarting(false);
     }
   };
+
+  // Determine if we're using vocabulary words or sentences based on the test type
+  const isVocabWordTest = testType === "englishToJapanese";
+  const itemTypeLabel = isVocabWordTest ? "vocabulary words" : "test sentences";
 
   return (
     <Card className="app-card w-full slide-up">
@@ -162,7 +166,7 @@ const TestSetup: React.FC<TestSetupProps> = ({
         <div className="space-y-2">
           <div className="flex justify-between items-center">
             <label className="text-sm font-medium">
-              Number of test sentences
+              Number of {itemTypeLabel}
             </label>
             <span className="text-sm font-medium">{count}</span>
           </div>
@@ -190,28 +194,30 @@ const TestSetup: React.FC<TestSetupProps> = ({
           </div>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium">
-            Grammar Proficiency Level
-          </label>
-          <RadioGroup 
-            value={grammarLevel}
-            onValueChange={(value) => setGrammarLevel(value as GrammarLevel)}
-            className="grid grid-cols-1 gap-2 mt-2"
-          >
-            {GRAMMAR_LEVELS.map((level) => (
-              <div key={level.value} className="flex items-start space-x-2 rounded-md border p-3">
-                <RadioGroupItem value={level.value} id={`level-${level.value}`} />
-                <div className="flex flex-col">
-                  <Label htmlFor={`level-${level.value}`} className="font-medium">
-                    {level.label}
-                  </Label>
-                  <span className="text-xs text-muted-foreground">{level.description}</span>
+        {!isVocabWordTest && (
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              Grammar Proficiency Level
+            </label>
+            <RadioGroup 
+              value={grammarLevel}
+              onValueChange={(value) => setGrammarLevel(value as GrammarLevel)}
+              className="grid grid-cols-1 gap-2 mt-2"
+            >
+              {GRAMMAR_LEVELS.map((level) => (
+                <div key={level.value} className="flex items-start space-x-2 rounded-md border p-3">
+                  <RadioGroupItem value={level.value} id={`level-${level.value}`} />
+                  <div className="flex flex-col">
+                    <Label htmlFor={`level-${level.value}`} className="font-medium">
+                      {level.label}
+                    </Label>
+                    <span className="text-xs text-muted-foreground">{level.description}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </RadioGroup>
-        </div>
+              ))}
+            </RadioGroup>
+          </div>
+        )}
 
         <div className="text-sm">
           <div className="flex items-center mb-2">
@@ -246,7 +252,7 @@ const TestSetup: React.FC<TestSetupProps> = ({
               ) : (
                 <Languages className="mr-2 h-4 w-4" />
               )}
-              Start {TEST_TYPES.find(t => t.value === testType)?.label} Test with {count} Sentences
+              Start {TEST_TYPES.find(t => t.value === testType)?.label} Test with {count} {isVocabWordTest ? "Words" : "Sentences"}
             </>
           )}
         </Button>
