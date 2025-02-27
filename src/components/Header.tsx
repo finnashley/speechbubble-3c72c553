@@ -1,7 +1,7 @@
 
 import React from "react";
 import { WaniKaniUser } from "../lib/types";
-import { LogOut, MessageCircle, LogIn } from "lucide-react";
+import { LogOut, MessageCircle, LogIn, ExternalLink } from "lucide-react";
 import { Button } from "./ui/button";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -36,6 +36,17 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
               <span className="mx-2 text-muted-foreground">•</span>
               <span className="text-muted-foreground">Level {user.level}</span>
             </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              asChild
+              className="flex items-center gap-1"
+            >
+              <a href="https://www.wanikani.com" target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-4 w-4" />
+                WaniKani
+              </a>
+            </Button>
             <Button 
               variant="outline" 
               size="sm" 
