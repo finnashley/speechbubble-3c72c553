@@ -35,7 +35,16 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
             </button>
           </div>
         ) : (
-          <span className="text-sm text-muted-foreground">Not connected</span>
+          <div className="flex items-center">
+            <a 
+              href="https://www.wanikani.com/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-sm text-primary hover:text-primary/80 transition-colors"
+            >
+              Connect with WaniKani
+            </a>
+          </div>
         )}
       </div>
     </header>
