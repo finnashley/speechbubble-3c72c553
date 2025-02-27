@@ -1,11 +1,32 @@
 
 import { SelectedVocabulary, GeneratedSentence } from "../lib/types";
 
+const STORAGE_KEY = "openai-api-key";
+
+export const getStoredApiKey = (): string | null => {
+  return localStorage.getItem(STORAGE_KEY);
+};
+
+export const saveApiKey = (apiKey: string): void => {
+  localStorage.setItem(STORAGE_KEY, apiKey);
+};
+
+export const clearApiKey = (): void => {
+  localStorage.removeItem(STORAGE_KEY);
+};
+
 export const generateSentences = async (
   vocabulary: SelectedVocabulary[],
   count: number = 1
 ): Promise<GeneratedSentence[]> => {
   try {
+    // Get API key from localStorage (fallback to env variable for development)
+    const apiKey = getStoredApiKey() || import.meta.env.VITE_OPENAI_API_KEY;
+    
+    if (!apiKey) {
+      throw new Error("OpenAI API key is required");
+    }
+
     // Extract only the Japanese words for the API request
     const vocabWords = vocabulary.map(v => v.characters);
 
@@ -14,7 +35,7 @@ export const generateSentences = async (
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',

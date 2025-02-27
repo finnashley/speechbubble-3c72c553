@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import Layout from "@/components/Layout";
@@ -8,6 +9,7 @@ import HistorySection from "@/components/HistorySection";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { fetchAllAvailableVocabulary } from "@/services/wanikaniService";
 import { AppState, WaniKaniUser, SelectedVocabulary, GeneratedSentence } from "@/lib/types";
+import { Loader2 } from "lucide-react";
 
 const LOCAL_STORAGE_KEY = "wanikani-vocab-app-state";
 
@@ -51,7 +53,7 @@ const Index = () => {
       setAppState((prev) => ({ ...prev, vocabulary }));
       toast({
         title: "Connected to WaniKani",
-        description: `Loaded ${vocabulary.length} vocabulary items from your account.`,
+        description: `Loaded ${vocabulary.length} vocabulary items from your account (SRS started items only).`,
       });
     } catch (error) {
       console.error("Error loading vocabulary:", error);
@@ -141,17 +143,24 @@ const Index = () => {
               </CardContent>
             </Card>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <VocabularySelector
-                vocabulary={appState.vocabulary}
-                onSelectionChange={handleSelectionChange}
-              />
-              
-              <SentenceGenerator
-                selectedVocabulary={selectedVocabulary}
-                onSentencesGenerated={handleSentencesGenerated}
-              />
-            </div>
+            {isLoading ? (
+              <div className="flex justify-center items-center py-12">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <span className="ml-3 text-lg">Loading your vocabulary...</span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <VocabularySelector
+                  vocabulary={appState.vocabulary}
+                  onSelectionChange={handleSelectionChange}
+                />
+                
+                <SentenceGenerator
+                  selectedVocabulary={selectedVocabulary}
+                  onSentencesGenerated={handleSentencesGenerated}
+                />
+              </div>
+            )}
             
             <HistorySection
               sentences={appState.generatedSentences}

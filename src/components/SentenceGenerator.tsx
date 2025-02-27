@@ -4,10 +4,11 @@ import { SelectedVocabulary, GeneratedSentence } from "../lib/types";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, AlertCircle } from "lucide-react";
-import { generateSentences } from "../services/openaiService";
+import { Loader2, AlertCircle, Key } from "lucide-react";
+import { generateSentences, getStoredApiKey, saveApiKey } from "../services/openaiService";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import ApiKeyModal from "./ApiKeyModal";
 
 interface SentenceGeneratorProps {
   selectedVocabulary: SelectedVocabulary[];
@@ -21,7 +22,11 @@ const SentenceGenerator: React.FC<SentenceGeneratorProps> = ({
   const [count, setCount] = useState<number>(1);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const { toast } = useToast();
+  
+  const storedApiKey = getStoredApiKey();
+  const hasApiKey = !!storedApiKey;
 
   const handleGenerate = async () => {
     if (selectedVocabulary.length === 0) {
@@ -34,13 +39,8 @@ const SentenceGenerator: React.FC<SentenceGeneratorProps> = ({
     }
 
     // Check if OpenAI API key is set
-    if (!import.meta.env.VITE_OPENAI_API_KEY) {
-      setError("OpenAI API key is missing. Please add your API key to the .env file.");
-      toast({
-        title: "API Key Missing",
-        description: "OpenAI API key is required for sentence generation.",
-        variant: "destructive",
-      });
+    if (!getStoredApiKey() && !import.meta.env.VITE_OPENAI_API_KEY) {
+      setIsApiKeyModalOpen(true);
       return;
     }
 
@@ -58,98 +58,139 @@ const SentenceGenerator: React.FC<SentenceGeneratorProps> = ({
       console.error("Error generating sentences:", error);
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
       setError(`Failed to generate sentences: ${errorMessage}`);
-      toast({
-        title: "Error",
-        description: "Failed to generate sentences. Please try again.",
-        variant: "destructive",
-      });
+      
+      // If API key is invalid, prompt to enter a new one
+      if (errorMessage.includes("API key") || errorMessage.includes("401")) {
+        toast({
+          title: "API Key Issue",
+          description: "Your API key might be invalid or expired. Please update it.",
+          variant: "destructive",
+        });
+        setIsApiKeyModalOpen(true);
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to generate sentences. Please try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsGenerating(false);
     }
   };
 
+  const handleSaveApiKey = (apiKey: string) => {
+    saveApiKey(apiKey);
+    setError(null);
+  };
+
   return (
-    <Card className="app-card w-full slide-up">
-      <CardHeader>
-        <CardTitle>Generate Sentences</CardTitle>
-        <CardDescription>
-          Create practice sentences using your selected vocabulary.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {error && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        
-        {!import.meta.env.VITE_OPENAI_API_KEY && (
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>API Key Required</AlertTitle>
-            <AlertDescription>
-              Please add your OpenAI API key to the .env file to generate sentences.
-              You can get an API key from the <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="underline">OpenAI platform</a>.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <label htmlFor="sentence-count" className="text-sm font-medium">
-              Number of sentences
-            </label>
-            <span className="text-sm font-medium">{count}</span>
-          </div>
-          <Slider
-            id="sentence-count"
-            value={[count]}
-            min={1}
-            max={5}
-            step={1}
-            onValueChange={(values) => setCount(values[0])}
-          />
-        </div>
-
-        <div className="p-4 bg-secondary rounded-lg">
-          <h4 className="font-medium mb-2">Selected Vocabulary ({selectedVocabulary.length})</h4>
-          <div className="flex flex-wrap gap-2">
-            {selectedVocabulary.length > 0 ? (
-              selectedVocabulary.map((vocab) => (
-                <span
-                  key={vocab.id}
-                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary"
-                >
-                  {vocab.characters}
-                </span>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                No vocabulary selected. Please select some words.
-              </p>
-            )}
-          </div>
-        </div>
-      </CardContent>
-      <CardFooter>
-        <Button
-          onClick={handleGenerate}
-          disabled={isGenerating || selectedVocabulary.length === 0 || !import.meta.env.VITE_OPENAI_API_KEY}
-          className="w-full"
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Generating...
-            </>
-          ) : (
-            `Generate ${count} ${count === 1 ? "Sentence" : "Sentences"}`
+    <>
+      <Card className="app-card w-full slide-up">
+        <CardHeader>
+          <CardTitle>Generate Sentences</CardTitle>
+          <CardDescription>
+            Create practice sentences using your selected vocabulary.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
-        </Button>
-      </CardFooter>
-    </Card>
+          
+          {!hasApiKey && !import.meta.env.VITE_OPENAI_API_KEY && (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>API Key Required</AlertTitle>
+              <AlertDescription>
+                An OpenAI API key is required to generate sentences.
+                <Button 
+                  variant="link" 
+                  className="p-0 h-auto font-normal text-primary"
+                  onClick={() => setIsApiKeyModalOpen(true)}
+                >
+                  Add your API key
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <label htmlFor="sentence-count" className="text-sm font-medium">
+                Number of sentences
+              </label>
+              <span className="text-sm font-medium">{count}</span>
+            </div>
+            <Slider
+              id="sentence-count"
+              value={[count]}
+              min={1}
+              max={5}
+              step={1}
+              onValueChange={(values) => setCount(values[0])}
+            />
+          </div>
+
+          <div className="p-4 bg-secondary rounded-lg">
+            <h4 className="font-medium mb-2">Selected Vocabulary ({selectedVocabulary.length})</h4>
+            <div className="flex flex-wrap gap-2">
+              {selectedVocabulary.length > 0 ? (
+                selectedVocabulary.map((vocab) => (
+                  <span
+                    key={vocab.id}
+                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary"
+                  >
+                    {vocab.characters}
+                  </span>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No vocabulary selected. Please select some words.
+                </p>
+              )}
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter className="flex flex-col sm:flex-row gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsApiKeyModalOpen(true)}
+            className="sm:mr-auto"
+          >
+            <Key className="h-4 w-4 mr-2" />
+            {hasApiKey ? "Update API Key" : "Add API Key"}
+          </Button>
+          
+          <Button
+            onClick={handleGenerate}
+            disabled={isGenerating || selectedVocabulary.length === 0}
+            className="w-full sm:w-auto"
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              `Generate ${count} ${count === 1 ? "Sentence" : "Sentences"}`
+            )}
+          </Button>
+        </CardFooter>
+      </Card>
+
+      <ApiKeyModal
+        isOpen={isApiKeyModalOpen}
+        onClose={() => setIsApiKeyModalOpen(false)}
+        onSave={handleSaveApiKey}
+        existingKey={storedApiKey || ""}
+      />
+    </>
   );
 };
 
