@@ -111,7 +111,7 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
 
   if (!currentSentence) {
     return (
-      <Card className="w-full">
+      <Card className="w-full mt-6">
         <CardContent className="pt-6 text-center">
           <p>No sentences available for testing. Please generate some sentences first.</p>
           <Button onClick={onExitTest} className="mt-4">
@@ -123,7 +123,7 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
   }
 
   return (
-    <Card className="w-full slide-up">
+    <Card className="w-full mt-6 slide-up">
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle>Translation Test</CardTitle>
