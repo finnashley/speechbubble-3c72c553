@@ -1,7 +1,7 @@
 
 import React from "react";
 import { WaniKaniUser } from "../lib/types";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, User } from "lucide-react";
 
 interface HeaderProps {
   user?: WaniKaniUser | null;
@@ -36,14 +36,10 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
           </div>
         ) : (
           <div className="flex items-center">
-            <a 
-              href="https://www.wanikani.com/" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-sm text-primary hover:text-primary/80 transition-colors"
-            >
-              Use WaniKani API
-            </a>
+            <div className="flex items-center px-3 py-2 bg-secondary rounded-lg">
+              <User className="h-4 w-4 text-muted-foreground mr-2" />
+              <span className="text-sm text-muted-foreground">Profile</span>
+            </div>
           </div>
         )}
       </div>
