@@ -126,7 +126,7 @@ const TestSetup: React.FC<TestSetupProps> = ({
           >
             {TEST_TYPES.map((type) => (
               <div key={type.value} className="flex items-start space-x-2 rounded-md border p-3">
-                <RadioGroupItem value={type.value} id={`type-${type.value}`} />
+                <RadioGroupItem value={type.value} id={`type-${type.value}`} className="mt-1" />
                 <div className="flex flex-col">
                   <div className="flex items-center">
                     {type.icon}
@@ -149,10 +149,10 @@ const TestSetup: React.FC<TestSetupProps> = ({
             <RadioGroup 
               value={speakingSpeed}
               onValueChange={setSpeakingSpeed}
-              className="flex flex-wrap gap-2 mt-2"
+              className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2"
             >
               {SPEAKING_SPEEDS.map((speed) => (
-                <div key={speed.value} className="flex items-center space-x-2 rounded-md border p-3 flex-1">
+                <div key={speed.value} className="flex items-center space-x-2 rounded-md border p-3">
                   <RadioGroupItem value={speed.value} id={`speed-${speed.value}`} />
                   <Label htmlFor={`speed-${speed.value}`} className="font-medium">
                     {speed.label}
@@ -174,17 +174,17 @@ const TestSetup: React.FC<TestSetupProps> = ({
                 variant={count === presetCount && customCount === "" ? "default" : "outline"}
                 size="sm"
                 onClick={() => handleCountChange(presetCount)}
-                className="flex-1 min-w-16"
+                className="flex-1 min-w-[4rem]"
               >
                 {presetCount}
               </Button>
             ))}
-            <div className="flex-1 min-w-24">
+            <div className="w-full sm:w-auto sm:flex-1 sm:min-w-[6rem]">
               <Input
                 value={customCount}
                 onChange={handleCustomCountChange}
                 placeholder="Custom"
-                className="h-9"
+                className="h-9 w-full"
                 maxLength={2}
               />
             </div>
@@ -203,7 +203,7 @@ const TestSetup: React.FC<TestSetupProps> = ({
             >
               {GRAMMAR_LEVELS.map((level) => (
                 <div key={level.value} className="flex items-start space-x-2 rounded-md border p-3">
-                  <RadioGroupItem value={level.value} id={`level-${level.value}`} />
+                  <RadioGroupItem value={level.value} id={`level-${level.value}`} className="mt-1" />
                   <div className="flex flex-col">
                     <Label htmlFor={`level-${level.value}`} className="font-medium">
                       {level.label}
