@@ -11,14 +11,14 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col w-full overflow-x-hidden">
       <Header user={user} onLogout={onLogout} />
-      <main className="flex-grow py-6">
+      <main className="flex-grow py-6 w-full overflow-x-hidden">
         <div className="app-container h-full">
           {children}
         </div>
       </main>
-      <footer className="border-t border-border py-6">
+      <footer className="border-t border-border py-6 w-full">
         <div className="app-container text-center text-sm text-muted-foreground">
           <p>Speechbubble - Practice Japanese with your WaniKani vocabulary</p>
         </div>
