@@ -12,7 +12,7 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
   return (
     <header className="border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-50">
-      <div className="app-container py-4 flex items-center justify-between">
+      <div className="app-container py-20 flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <MessageCircle className="h-6 w-6 text-primary" />
           <h1 className="text-2xl font-medium">
