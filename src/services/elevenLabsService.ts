@@ -17,9 +17,8 @@ export const generateSpeech = async (
   try {
     const {
       apiKey,
-      // For Japanese content, use Matilda which has better Japanese support
-      // or default to Adam if not specifically for Japanese
-      voice = options.isJapanese ? "XrExE9yKIg1WjnnlVkGX" : "pNInz6obpgDQGcFmaJgB", 
+      // Use provided custom Japanese voice ID or default to Adam for English
+      voice = options.isJapanese ? "RBnMinrYKeccY3vaUxlZ" : "pNInz6obpgDQGcFmaJgB", 
       // Use the multilingual model for Japanese content
       model = options.isJapanese ? "eleven_multilingual_v2" : "eleven_monolingual_v1",
       stability = 0.5,
