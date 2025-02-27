@@ -85,6 +85,11 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
         title: "Test completed!",
         description: `Your score: ${score.correct} / ${score.total}`,
       });
+      
+      // If this is the last sentence, exit the test mode
+      if (isLastSentence) {
+        onExitTest();
+      }
     }
   };
 
