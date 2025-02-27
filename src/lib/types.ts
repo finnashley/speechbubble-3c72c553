@@ -47,6 +47,8 @@ export interface SelectedVocabulary {
   readings: string[];
 }
 
+export type GrammarLevel = "beginner" | "intermediate" | "advanced";
+
 export interface GeneratedSentence {
   id: string;
   createdAt: string;

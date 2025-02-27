@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { SelectedVocabulary, GeneratedSentence } from "../lib/types";
+import { SelectedVocabulary, GeneratedSentence, GrammarLevel } from "../lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, AlertCircle, Key, MessageCircle } from "lucide-react";
@@ -9,6 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import ApiKeyModal from "./ApiKeyModal";
 import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 interface SentenceGeneratorProps {
   selectedVocabulary: SelectedVocabulary[];
@@ -17,12 +19,31 @@ interface SentenceGeneratorProps {
 
 const PRESET_COUNTS = [5, 10, 15, 20];
 
+const GRAMMAR_LEVELS: { value: GrammarLevel; label: string; description: string }[] = [
+  {
+    value: "beginner",
+    label: "Beginner",
+    description: "Simple sentences with basic particles and present tense",
+  },
+  {
+    value: "intermediate",
+    label: "Intermediate",
+    description: "More complex grammar patterns and past tense",
+  },
+  {
+    value: "advanced",
+    label: "Advanced",
+    description: "Advanced grammar patterns and complex sentence structures",
+  },
+];
+
 const SentenceGenerator: React.FC<SentenceGeneratorProps> = ({
   selectedVocabulary,
   onSentencesGenerated,
 }) => {
   const [count, setCount] = useState<number>(5);
   const [customCount, setCustomCount] = useState<string>("");
+  const [grammarLevel, setGrammarLevel] = useState<GrammarLevel>("beginner");
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
@@ -70,7 +91,7 @@ const SentenceGenerator: React.FC<SentenceGeneratorProps> = ({
     setError(null);
     
     try {
-      const sentences = await generateSentences(selectedVocabulary, count);
+      const sentences = await generateSentences(selectedVocabulary, count, grammarLevel);
       onSentencesGenerated(sentences);
       toast({
         title: "Sentences generated",
@@ -173,6 +194,29 @@ const SentenceGenerator: React.FC<SentenceGeneratorProps> = ({
                 />
               </div>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              Grammar Proficiency Level
+            </label>
+            <RadioGroup 
+              value={grammarLevel}
+              onValueChange={(value) => setGrammarLevel(value as GrammarLevel)}
+              className="grid grid-cols-1 gap-2 mt-2"
+            >
+              {GRAMMAR_LEVELS.map((level) => (
+                <div key={level.value} className="flex items-start space-x-2 rounded-md border p-3">
+                  <RadioGroupItem value={level.value} id={`level-${level.value}`} />
+                  <div className="flex flex-col">
+                    <Label htmlFor={`level-${level.value}`} className="font-medium">
+                      {level.label}
+                    </Label>
+                    <span className="text-xs text-muted-foreground">{level.description}</span>
+                  </div>
+                </div>
+              ))}
+            </RadioGroup>
           </div>
 
           <div className="text-sm">

@@ -1,5 +1,5 @@
 
-import { SelectedVocabulary, GeneratedSentence } from "../lib/types";
+import { SelectedVocabulary, GeneratedSentence, GrammarLevel } from "../lib/types";
 
 const STORAGE_KEY = "openai-api-key";
 
@@ -17,7 +17,8 @@ export const clearApiKey = (): void => {
 
 export const generateSentences = async (
   vocabulary: SelectedVocabulary[],
-  count: number = 1
+  count: number = 1,
+  grammarLevel: GrammarLevel = "beginner"
 ): Promise<GeneratedSentence[]> => {
   try {
     // Get API key from localStorage (fallback to env variable for development)
@@ -29,6 +30,21 @@ export const generateSentences = async (
 
     // Extract only the Japanese words for the API request
     const vocabWords = vocabulary.map(v => v.characters);
+
+    // Configure grammar instructions based on level
+    let grammarInstructions = "";
+    
+    switch (grammarLevel) {
+      case "beginner":
+        grammarInstructions = "Use only very simple grammar patterns suitable for beginners. Stick to present tense, basic particles (は, が, を, に, で), and avoid complex conjugations. Keep sentences short and direct.";
+        break;
+      case "intermediate":
+        grammarInstructions = "Use moderately complex grammar patterns suitable for intermediate learners. You can use past tense, て-form, simple conditional forms, and basic conjunctions. Keep sentence structures straightforward.";
+        break;
+      case "advanced":
+        grammarInstructions = "Use more complex grammar patterns suitable for advanced learners. You can include passive voice, causative forms, conditional forms, and more complex sentence structures with multiple clauses.";
+        break;
+    }
 
     // Make direct request to OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -43,13 +59,14 @@ export const generateSentences = async (
           {
             role: 'system',
             content: `You are a Japanese language tutor helping students practice vocabulary. 
-            Create ${count} simple Japanese sentences using ONLY the following vocabulary words: ${vocabWords.join(', ')}. 
+            Create ${count} Japanese sentences using ONLY the following vocabulary words: ${vocabWords.join(', ')}. 
             You may use basic grammatical particles and common words not in the list (like です, は, が, を, に, で, etc.).
-            Each sentence should be short (5-8 words maximum) and suitable for beginners.`
+            ${grammarInstructions}
+            Each sentence should be suitable for a ${grammarLevel} Japanese language learner.`
           },
           {
             role: 'user',
-            content: `Create ${count} short Japanese sentences using only these words: ${vocabWords.join(', ')}.
+            content: `Create ${count} Japanese sentences using only these words: ${vocabWords.join(', ')}.
             Return the response in the following JSON format:
             {
               "sentences": [
