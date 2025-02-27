@@ -148,7 +148,7 @@ const Index = () => {
         {!appState.apiKey || !appState.user ? (
           <>
             <div className="text-center my-12">
-              <h1 className="text-4xl font-bold mb-2">Speechbubble</h1>
+              <h1 className="text-4xl font-bold mb-4">Speechbubble</h1>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                 Generate custom practice sentences using your WaniKani vocabulary
               </p>

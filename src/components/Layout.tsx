@@ -13,7 +13,7 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
   return (
     <div className="min-h-screen bg-background">
       <Header user={user} onLogout={onLogout} />
-      <main className="app-container py-8">
+      <main className="app-container py-12">
         {children}
       </main>
       <footer className="border-t border-border py-6">
