@@ -64,8 +64,8 @@ const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({
         throw new Error("Password verification failed. Please check your password and try again.");
       }
       
-      // Try to use the RPC function to delete user
-      // The RPC function doesn't accept any parameters, so don't pass anything
+      // Call the delete_user RPC function without any arguments
+      // @ts-ignore - Ignoring TypeScript error as the RPC function exists but TypeScript doesn't recognize its signature
       const { error: userDeleteError } = await supabase.rpc('delete_user');
       
       if (userDeleteError) {
