@@ -48,33 +48,36 @@ const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({ open, onOpenC
         description: error.message || "Something went wrong. Please try again.",
         variant: "destructive",
       });
+    } finally {
       setLoading(false);
     }
   };
 
   const handleCancel = () => {
-    setLoading(false);
+    if (loading) return; // Don't allow cancel while loading
     onOpenChange(false);
   };
 
-  // Ensure the dialog doesn't hang when clicking outside
-  const handleOpenChange = (newOpen: boolean) => {
-    if (!newOpen && !loading) {
-      onOpenChange(false);
-    }
-  };
-
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent onInteractOutside={(e) => {
-        if (!loading) {
-          e.preventDefault();
-          onOpenChange(false);
-        } else {
-          // Prevent closing if loading
-          e.preventDefault();
-        }
-      }}>
+    <Dialog 
+      open={open} 
+      onOpenChange={(newOpen) => {
+        // Only allow closing if not in loading state
+        if (loading && !newOpen) return;
+        onOpenChange(newOpen);
+      }}
+    >
+      <DialogContent 
+        onEscapeKeyDown={(e) => {
+          if (loading) e.preventDefault();
+        }}
+        onPointerDownOutside={(e) => {
+          if (loading) e.preventDefault();
+        }}
+        onInteractOutside={(e) => {
+          if (loading) e.preventDefault();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Delete Account</DialogTitle>
           <DialogDescription>

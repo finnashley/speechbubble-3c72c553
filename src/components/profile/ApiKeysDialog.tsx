@@ -45,6 +45,7 @@ const ApiKeysDialog: React.FC<ApiKeysDialogProps> = ({
           setElevenLabsKey(data.elevenlabs_key || "");
         }
       } catch (error: any) {
+        console.error("Error fetching API keys:", error);
         toast({
           title: "Error fetching API keys",
           description: error.message || "Failed to load your API keys",
@@ -82,16 +83,19 @@ const ApiKeysDialog: React.FC<ApiKeysDialogProps> = ({
         })
         .eq('id', userId);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error updating profile:", error);
+        throw error;
+      }
+      
+      // Store API keys in localStorage for service usage
+      localStorage.setItem("openai-api-key", openaiKey);
+      localStorage.setItem("elevenlabs-api-key", elevenLabsKey);
       
       toast({
         title: "API keys updated",
         description: "Your API keys have been updated successfully",
       });
-
-      // Store API keys in localStorage for service usage
-      localStorage.setItem("openai-api-key", openaiKey);
-      localStorage.setItem("elevenlabs-api-key", elevenLabsKey);
       
       onOpenChange(false);
     } catch (error: any) {
@@ -105,24 +109,32 @@ const ApiKeysDialog: React.FC<ApiKeysDialogProps> = ({
     }
   };
 
-  // Ensure the dialog doesn't hang when clicking outside
-  const handleOpenChange = (newOpen: boolean) => {
-    if (!newOpen && !loading) {
-      onOpenChange(false);
-    }
+  const handleCancel = () => {
+    if (loading) return; // Don't allow cancel while loading
+    onOpenChange(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md" onInteractOutside={(e) => {
-        if (!loading) {
-          e.preventDefault();
-          onOpenChange(false);
-        } else {
-          // Prevent closing if loading
-          e.preventDefault();
-        }
-      }}>
+    <Dialog 
+      open={open} 
+      onOpenChange={(newOpen) => {
+        // Only allow closing if not in loading state
+        if (loading && !newOpen) return;
+        onOpenChange(newOpen);
+      }}
+    >
+      <DialogContent 
+        className="sm:max-w-md"
+        onEscapeKeyDown={(e) => {
+          if (loading) e.preventDefault();
+        }}
+        onPointerDownOutside={(e) => {
+          if (loading) e.preventDefault();
+        }}
+        onInteractOutside={(e) => {
+          if (loading) e.preventDefault();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Edit API Keys</DialogTitle>
           <DialogDescription>
@@ -197,7 +209,7 @@ const ApiKeysDialog: React.FC<ApiKeysDialogProps> = ({
         <DialogFooter>
           <Button 
             variant="outline" 
-            onClick={() => onOpenChange(false)}
+            onClick={handleCancel}
             disabled={loading}
           >
             Cancel
