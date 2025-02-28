@@ -39,7 +39,8 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ onLogout, wanikaniUse
 
   if (!user) return null;
 
-  const displayName = wanikaniUser?.username || user.email;
+  // Use wanikaniUser's username, or user's email if available, or fallback to "User"
+  const displayName = wanikaniUser?.username || user.email || "User";
 
   return (
     <>
@@ -87,7 +88,10 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ onLogout, wanikaniUse
         <DeleteAccountDialog
           open={showDeleteAccount}
           onOpenChange={setShowDeleteAccount}
-          user={user}
+          user={{
+            id: user.id,
+            email: user.email || ''  // Provide a default empty string if email is undefined
+          }}
           signOut={signOut}
         />
       )}

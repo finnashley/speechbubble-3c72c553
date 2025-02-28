@@ -64,19 +64,13 @@ const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({
         throw new Error("Password verification failed. Please check your password and try again.");
       }
       
-      // Delete the user account
-      const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
+      // Try to use the RPC function to delete user
+      const { error: userDeleteError } = await supabase.rpc('delete_user');
       
-      // If the admin API fails (which is common in client environments), 
-      // try the standard method
-      if (deleteError) {
-        const { error: userDeleteError } = await supabase.rpc('delete_user');
-        
-        if (userDeleteError) {
-          // Fallback to just signing out if both deletion methods fail
-          await signOut();
-          throw new Error("Could not fully delete account. Please contact support for account deletion.");
-        }
+      if (userDeleteError) {
+        // If RPC fails, fallback to just signing out
+        await signOut();
+        throw new Error("Could not fully delete account. Please contact support for account deletion.");
       }
       
       // Clear local storage
