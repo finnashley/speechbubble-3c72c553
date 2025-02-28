@@ -31,6 +31,7 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isTestMode, setIsTestMode] = useState(false);
   const [testSentences, setTestSentences] = useState<GeneratedSentence[]>([]);
+  const [profileLoaded, setProfileLoaded] = useState(false);
   
   const { toast } = useToast();
   const { user } = useAuth();
@@ -38,6 +39,8 @@ const Index = () => {
   useEffect(() => {
     const loadUserProfile = async () => {
       if (!user) return;
+      
+      setIsLoading(true);
 
       try {
         const { data, error } = await supabase
@@ -48,11 +51,13 @@ const Index = () => {
 
         if (error) {
           console.error("Error fetching profile:", error);
+          setIsLoading(false);
+          setProfileLoaded(true);
           return;
         }
 
         // If we have WaniKani API key stored, initialize the app
-        if (data.wanikani_key) {
+        if (data && data.wanikani_key) {
           const openaiKey = data.openai_key || "";
           const elevenLabsKey = data.elevenlabs_key || "";
           
@@ -60,20 +65,29 @@ const Index = () => {
           localStorage.setItem("openai-api-key", openaiKey);
           localStorage.setItem("elevenlabs-api-key", elevenLabsKey);
           
+          console.log("Profile loaded with API keys. Initializing WaniKani...");
+          
           // Initialize WaniKani
           try {
-            await handleWaniKaniAuth(data.wanikani_key, openaiKey, elevenLabsKey);
+            await handleWaniKaniAuth(data.wanikani_key, null, openaiKey, elevenLabsKey);
           } catch (error) {
             console.error("Error initializing WaniKani:", error);
           }
+        } else {
+          console.log("Profile found but no WaniKani API key present");
         }
       } catch (error) {
         console.error("Error in loadUserProfile:", error);
+      } finally {
+        setIsLoading(false);
+        setProfileLoaded(true);
       }
     };
 
-    loadUserProfile();
-  }, [user]);
+    if (user && !profileLoaded) {
+      loadUserProfile();
+    }
+  }, [user, profileLoaded]);
 
   useEffect(() => {
     const savedState = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -95,43 +109,49 @@ const Index = () => {
 
   const handleWaniKaniAuth = async (
     apiKey: string, 
+    wkUser: WaniKaniUser | null = null,
     openaiKey: string = "", 
     elevenLabsKey: string = ""
   ) => {
     setIsLoading(true);
     
     try {
-      // Fetch WaniKani user info
-      const response = await fetch("https://api.wanikani.com/v2/user", {
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error("Failed to fetch WaniKani user");
+      // If wkUser is not provided, fetch WaniKani user info
+      let userData: WaniKaniUser;
+      if (!wkUser) {
+        const response = await fetch("https://api.wanikani.com/v2/user", {
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+          },
+        });
+        
+        if (!response.ok) {
+          throw new Error("Failed to fetch WaniKani user");
+        }
+        
+        const userResponse = await response.json();
+        userData = {
+          id: userResponse.data.id,
+          username: userResponse.data.username,
+          level: userResponse.data.level,
+          profile_url: userResponse.data.profile_url,
+        };
+      } else {
+        userData = wkUser;
       }
       
-      const userData = await response.json();
-      const wkUser: WaniKaniUser = {
-        id: userData.data.id,
-        username: userData.data.username,
-        level: userData.data.level,
-        profile_url: userData.data.profile_url,
-      };
-      
-      setAppState((prev) => ({ ...prev, apiKey, user: wkUser }));
+      setAppState((prev) => ({ ...prev, apiKey, user: userData }));
       
       // If authenticated user exists, save the API keys to their profile
       if (user) {
         const { error } = await supabase
           .from('profiles')
-          .update({
+          .upsert({
+            id: user.id,
             wanikani_key: apiKey,
             openai_key: openaiKey,
             elevenlabs_key: elevenLabsKey
-          })
-          .eq('id', user.id);
+          }, { onConflict: 'id' });
           
         if (error) {
           console.error("Error updating profile:", error);
@@ -143,7 +163,7 @@ const Index = () => {
       localStorage.setItem("elevenlabs-api-key", elevenLabsKey);
       
       // Fetch vocabulary
-      const vocabulary = await fetchAllAvailableVocabulary(apiKey, wkUser.level);
+      const vocabulary = await fetchAllAvailableVocabulary(apiKey, userData.level);
       setAppState((prev) => ({ ...prev, vocabulary }));
       
       toast({
@@ -168,24 +188,29 @@ const Index = () => {
     openaiKey: string, 
     elevenLabsKey: string
   ) => {
+    // Update app state with the API key and user info
     setAppState((prev) => ({ ...prev, apiKey, user }));
     
+    // Store OpenAI and ElevenLabs keys in localStorage
     localStorage.setItem("openai-api-key", openaiKey);
     localStorage.setItem("elevenlabs-api-key", elevenLabsKey);
     
     // If authenticated user exists, save the API keys to their profile
     if (user) {
+      console.log("Saving API keys to profile...");
       const { error } = await supabase
         .from('profiles')
-        .update({
+        .upsert({
+          id: user.id,
           wanikani_key: apiKey,
           openai_key: openaiKey,
           elevenlabs_key: elevenLabsKey
-        })
-        .eq('id', user.id);
+        }, { onConflict: 'id' });
         
       if (error) {
         console.error("Error updating profile:", error);
+      } else {
+        console.log("Profile updated successfully");
       }
     }
     
@@ -222,10 +247,11 @@ const Index = () => {
     localStorage.removeItem("openai-api-key");
     localStorage.removeItem("elevenlabs-api-key");
     localStorage.removeItem(TEST_TYPE_STORAGE);
+    setProfileLoaded(false);
     
     toast({
       title: "Logged out",
-      description: "You have been logged out of WaniKani. Your history and API keys have been cleared.",
+      description: "You have been logged out of WaniKani. Your local session has been cleared.",
     });
   };
 
@@ -335,7 +361,14 @@ const Index = () => {
             </p>
           </div>
           
-          <WaniKaniAuth onAuthenticated={handleAuthenticated} />
+          {isLoading ? (
+            <div className="flex justify-center items-center py-12">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              <span className="ml-3 text-lg">Loading your profile...</span>
+            </div>
+          ) : (
+            <WaniKaniAuth onAuthenticated={handleAuthenticated} />
+          )}
           
           {appState.generatedSentences.length > 0 && (
             <HistorySection

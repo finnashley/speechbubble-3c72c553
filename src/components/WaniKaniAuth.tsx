@@ -18,6 +18,7 @@ const WaniKaniAuth: React.FC<WaniKaniAuthProps> = ({ onAuthenticated }) => {
   const [openaiKey, setOpenaiKey] = useState("");
   const [elevenLabsKey, setElevenLabsKey] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAdditionalKeys, setShowAdditionalKeys] = useState(false);
   const { user } = useAuth();
@@ -25,34 +26,66 @@ const WaniKaniAuth: React.FC<WaniKaniAuthProps> = ({ onAuthenticated }) => {
   // Check for saved API keys in the profile and load them if they exist
   useEffect(() => {
     const loadProfileKeys = async () => {
-      if (!user) return;
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('wanikani_key, openai_key, elevenlabs_key')
-        .eq('id', user.id)
-        .single();
-      
-      if (error) {
-        console.error("Error loading profile keys:", error);
+      if (!user) {
+        setIsLoadingProfile(false);
         return;
       }
       
-      if (data?.wanikani_key) {
-        setApiKey(data.wanikani_key);
-      }
-      
-      if (data?.openai_key) {
-        setOpenaiKey(data.openai_key);
-      }
-      
-      if (data?.elevenlabs_key) {
-        setElevenLabsKey(data.elevenlabs_key);
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('wanikani_key, openai_key, elevenlabs_key')
+          .eq('id', user.id)
+          .single();
+        
+        if (error) {
+          console.error("Error loading profile keys:", error);
+          setIsLoadingProfile(false);
+          return;
+        }
+        
+        // If we have a WaniKani key stored, try to auto-authenticate
+        if (data?.wanikani_key) {
+          setApiKey(data.wanikani_key);
+          
+          if (data?.openai_key) {
+            setOpenaiKey(data.openai_key);
+          }
+          
+          if (data?.elevenlabs_key) {
+            setElevenLabsKey(data.elevenlabs_key);
+          }
+          
+          // Try to auto-authenticate
+          try {
+            const wkUser = await fetchUser(data.wanikani_key);
+            
+            // If all API keys are present, auto-authenticate
+            if (data.wanikani_key) {
+              onAuthenticated(
+                data.wanikani_key, 
+                wkUser, 
+                data.openai_key || "", 
+                data.elevenlabs_key || ""
+              );
+            } else {
+              // If we have a WaniKani key but missing other keys, show the additional keys form
+              setShowAdditionalKeys(true);
+            }
+          } catch (err) {
+            console.error("Error auto-authenticating:", err);
+            // If auto-auth fails, just let the user enter the keys manually
+          }
+        }
+      } catch (err) {
+        console.error("Error in loadProfileKeys:", err);
+      } finally {
+        setIsLoadingProfile(false);
       }
     };
     
     loadProfileKeys();
-  }, [user]);
+  }, [user, onAuthenticated]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -77,12 +110,12 @@ const WaniKaniAuth: React.FC<WaniKaniAuthProps> = ({ onAuthenticated }) => {
       if (user) {
         const { error } = await supabase
           .from('profiles')
-          .update({
+          .upsert({
+            id: user.id,
             wanikani_key: apiKey,
             openai_key: openaiKey,
             elevenlabs_key: elevenLabsKey
-          })
-          .eq('id', user.id);
+          }, { onConflict: 'id' });
           
         if (error) {
           console.error("Error updating profile:", error);
@@ -97,6 +130,22 @@ const WaniKaniAuth: React.FC<WaniKaniAuthProps> = ({ onAuthenticated }) => {
       setIsLoading(false);
     }
   };
+
+  if (isLoadingProfile) {
+    return (
+      <Card className="app-card max-w-md w-full mx-auto slide-up">
+        <CardHeader>
+          <CardTitle>Loading Your Profile</CardTitle>
+          <CardDescription>
+            Checking for saved API keys...
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex justify-center py-6">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="app-card max-w-md w-full mx-auto slide-up">
