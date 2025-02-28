@@ -122,7 +122,7 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ onLogout, wanikaniUse
     }
   };
 
-  // Delete full account (not just profile)
+  // Delete full account
   const handleDeleteAccount = async () => {
     if (!user) return;
     
@@ -146,31 +146,29 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ onLogout, wanikaniUse
     
     setLoading(true);
     try {
-      // First authenticate with the password to verify user
-      const { error: authError } = await supabase.auth.signInWithPassword({
+      // First verify the user's password
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email: user.email!,
         password: password,
       });
-
-      if (authError) {
+      
+      if (signInError) {
         throw new Error("Password verification failed. Please check your password and try again.");
       }
-
-      // Delete the profile (this will cascade to delete related data)
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', user.id);
       
-      if (profileError) throw profileError;
+      // Delete the user account
+      const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
       
-      // Then delete the user account
-      const { error: userDeleteError } = await supabase.auth.admin.deleteUser(user.id);
-      
-      if (userDeleteError) {
-        // Fallback to just signing out if deletion fails (admin APIs might not be available)
-        await supabase.auth.signOut();
-        throw new Error("Could not fully delete account. Your session has been ended, but you may need to contact support for full account deletion.");
+      // If the admin API fails (which is common in client environments), 
+      // try the standard method
+      if (deleteError) {
+        const { error: userDeleteError } = await supabase.rpc('delete_user');
+        
+        if (userDeleteError) {
+          // Fallback to just signing out if both deletion methods fail
+          await signOut();
+          throw new Error("Could not fully delete account. Please contact support for account deletion.");
+        }
       }
       
       // Clear local storage
