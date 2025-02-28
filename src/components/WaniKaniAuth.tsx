@@ -14,13 +14,9 @@ interface WaniKaniAuthProps {
 }
 
 const WaniKaniAuth: React.FC<WaniKaniAuthProps> = ({ onAuthenticated }) => {
-  const [apiKey, setApiKey] = useState("");
-  const [openaiKey, setOpenaiKey] = useState("");
-  const [elevenLabsKey, setElevenLabsKey] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showAdditionalKeys, setShowAdditionalKeys] = useState(false);
   const { user } = useAuth();
 
   // Check for saved API keys in the profile and load them if they exist
@@ -46,39 +42,26 @@ const WaniKaniAuth: React.FC<WaniKaniAuthProps> = ({ onAuthenticated }) => {
         
         // If we have a WaniKani key stored, try to auto-authenticate
         if (data?.wanikani_key) {
-          setApiKey(data.wanikani_key);
-          
-          if (data?.openai_key) {
-            setOpenaiKey(data.openai_key);
-          }
-          
-          if (data?.elevenlabs_key) {
-            setElevenLabsKey(data.elevenlabs_key);
-          }
-          
-          // Try to auto-authenticate
           try {
             const wkUser = await fetchUser(data.wanikani_key);
             
-            // If all API keys are present, auto-authenticate
-            if (data.wanikani_key) {
-              onAuthenticated(
-                data.wanikani_key, 
-                wkUser, 
-                data.openai_key || "", 
-                data.elevenlabs_key || ""
-              );
-            } else {
-              // If we have a WaniKani key but missing other keys, show the additional keys form
-              setShowAdditionalKeys(true);
-            }
+            // Auto-authenticate with the stored keys
+            onAuthenticated(
+              data.wanikani_key, 
+              wkUser, 
+              data.openai_key || "", 
+              data.elevenlabs_key || ""
+            );
           } catch (err) {
             console.error("Error auto-authenticating:", err);
-            // If auto-auth fails, just let the user enter the keys manually
+            setError("Could not authenticate with stored WaniKani API key. Please sign out and sign in again.");
           }
+        } else {
+          setError("No WaniKani API key found in your profile. Please sign out and sign in again with a valid key.");
         }
       } catch (err) {
         console.error("Error in loadProfileKeys:", err);
+        setError("An error occurred while loading your profile. Please try again.");
       } finally {
         setIsLoadingProfile(false);
       }
@@ -86,50 +69,6 @@ const WaniKaniAuth: React.FC<WaniKaniAuthProps> = ({ onAuthenticated }) => {
     
     loadProfileKeys();
   }, [user, onAuthenticated]);
-
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    
-    if (!apiKey.trim()) {
-      setError("Please enter your WaniKani API key");
-      return;
-    }
-    
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const wkUser = await fetchUser(apiKey);
-      if (!showAdditionalKeys) {
-        setShowAdditionalKeys(true);
-        setIsLoading(false);
-        return;
-      }
-      
-      // Save the API keys to the user's profile if logged in
-      if (user) {
-        const { error } = await supabase
-          .from('profiles')
-          .upsert({
-            id: user.id,
-            wanikani_key: apiKey,
-            openai_key: openaiKey,
-            elevenlabs_key: elevenLabsKey
-          }, { onConflict: 'id' });
-          
-        if (error) {
-          console.error("Error updating profile:", error);
-        }
-      }
-      
-      onAuthenticated(apiKey, wkUser, openaiKey, elevenLabsKey);
-    } catch (err) {
-      setError("Authentication failed. Please check your API key and try again.");
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   if (isLoadingProfile) {
     return (
@@ -147,96 +86,52 @@ const WaniKaniAuth: React.FC<WaniKaniAuthProps> = ({ onAuthenticated }) => {
     );
   }
 
+  if (error) {
+    return (
+      <Card className="app-card max-w-md w-full mx-auto slide-up">
+        <CardHeader>
+          <CardTitle>Authentication Error</CardTitle>
+          <CardDescription>
+            There was a problem with your API keys.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </CardContent>
+        <CardFooter>
+          <Button 
+            onClick={async () => {
+              await supabase.auth.signOut();
+              window.location.href = '/auth';
+            }} 
+            className="w-full"
+          >
+            Sign Out and Try Again
+          </Button>
+        </CardFooter>
+      </Card>
+    );
+  }
+
   return (
     <Card className="app-card max-w-md w-full mx-auto slide-up">
       <CardHeader>
-        <CardTitle>{showAdditionalKeys ? "Setup Speechbubble" : "Connect to WaniKani"}</CardTitle>
+        <CardTitle>Authentication Complete</CardTitle>
         <CardDescription>
-          {!showAdditionalKeys 
-            ? "Enter your WaniKani API key to access your vocabulary."
-            : "Great! Now enter your OpenAI and ElevenLabs API keys for additional features."}
+          If you're seeing this screen, there's an issue with the authentication flow. Please refresh the page or sign out and sign in again.
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <label htmlFor="api-key" className="text-sm font-medium">
-              WaniKani API Key
-            </label>
-            <Input
-              id="api-key"
-              type="password"
-              placeholder="Enter your WaniKani API V2 token"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              className="w-full"
-              disabled={showAdditionalKeys}
-            />
-          </div>
-          
-          {showAdditionalKeys && (
-            <>
-              <div className="space-y-2">
-                <label htmlFor="openai-key" className="text-sm font-medium">
-                  OpenAI API Key
-                </label>
-                <Input
-                  id="openai-key"
-                  type="password"
-                  placeholder="Enter your OpenAI API key"
-                  value={openaiKey}
-                  onChange={(e) => setOpenaiKey(e.target.value)}
-                  className="w-full"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="elevenlabs-key" className="text-sm font-medium">
-                  ElevenLabs API Key
-                </label>
-                <Input
-                  id="elevenlabs-key"
-                  type="password"
-                  placeholder="Enter your ElevenLabs API key"
-                  value={elevenLabsKey}
-                  onChange={(e) => setElevenLabsKey(e.target.value)}
-                  className="w-full"
-                />
-              </div>
-            </>
-          )}
-          
-          {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-          
-          {!showAdditionalKeys && (
-            <div className="text-sm text-muted-foreground">
-              <p>
-                You can find your API key in your{" "}
-                <a
-                  href="https://www.wanikani.com/settings/personal_access_tokens"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-primary underline hover:text-primary/80 transition-colors"
-                >
-                  WaniKani API Dashboard
-                </a>.
-              </p>
-            </div>
-          )}
-        </form>
-      </CardContent>
       <CardFooter>
         <Button 
-          type="submit" 
-          onClick={handleSubmit} 
-          disabled={isLoading}
+          onClick={async () => {
+            await supabase.auth.signOut();
+            window.location.href = '/auth';
+          }} 
           className="w-full"
         >
-          {isLoading ? "Connecting..." : showAdditionalKeys ? "Complete Setup" : "Connect"}
+          Sign Out
         </Button>
       </CardFooter>
     </Card>

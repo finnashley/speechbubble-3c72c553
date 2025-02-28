@@ -76,10 +76,10 @@ const Auth = () => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !password) {
+    if (!email || !password || !wanikaniKey) {
       toast({
-        title: "Missing fields",
-        description: "Please fill in all required fields",
+        title: "Missing required fields",
+        description: "Please fill in all required fields (WaniKani API key is required)",
         variant: "destructive",
       });
       return;
@@ -224,10 +224,12 @@ const Auth = () => {
                   </div>
                   
                   <div className="pt-2">
-                    <p className="text-sm text-muted-foreground mb-2">API Keys (can be added later)</p>
+                    <p className="text-sm text-muted-foreground mb-2">API Keys (required)</p>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="wanikani-key">WaniKani API Key</Label>
+                      <Label htmlFor="wanikani-key">
+                        WaniKani API Key <span className="text-red-500">*</span>
+                      </Label>
                       <Input
                         id="wanikani-key"
                         type="password"
@@ -235,7 +237,18 @@ const Auth = () => {
                         value={wanikaniKey}
                         onChange={(e) => setWanikaniKey(e.target.value)}
                         disabled={loading}
+                        required
                       />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        <a 
+                          href="https://www.wanikani.com/settings/personal_access_tokens" 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="text-primary hover:underline"
+                        >
+                          Get your WaniKani API key
+                        </a>
+                      </p>
                     </div>
                     
                     <div className="space-y-2 mt-2">
