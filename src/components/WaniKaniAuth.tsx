@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import { fetchUser } from "../services/wanikaniService";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { WaniKaniUser } from "../lib/types";

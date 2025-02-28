@@ -2,18 +2,23 @@
 import React, { ReactNode } from "react";
 import Header from "./Header";
 import { WaniKaniUser } from "@/lib/types";
+import { useAuth } from "@/context/AuthContext";
 
 interface LayoutProps {
   children: ReactNode;
   user?: WaniKaniUser | null;
   onLogout?: () => void;
+  hideHeader?: boolean;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
+const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, hideHeader }) => {
+  const { user: authUser } = useAuth();
+  const shouldShowHeader = !hideHeader && authUser !== null;
+  
   return (
     <div className="min-h-screen bg-background flex flex-col w-full overflow-x-hidden">
-      <Header user={user} onLogout={onLogout} />
-      <main className="flex-grow py-6 w-full overflow-x-hidden">
+      {shouldShowHeader && <Header user={user} onLogout={onLogout} />}
+      <main className={`flex-grow py-6 w-full overflow-x-hidden ${!shouldShowHeader ? "pt-10" : ""}`}>
         <div className="app-container h-full">
           {children}
         </div>

@@ -8,8 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { MessageCircle } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MessageCircle, ExternalLink } from "lucide-react";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -18,7 +17,7 @@ const Auth = () => {
   const [openaiKey, setOpenaiKey] = useState("");
   const [elevenLabsKey, setElevenLabsKey] = useState("");
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("signin");
+  const [showSignUp, setShowSignUp] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -117,12 +116,11 @@ const Auth = () => {
         description: "Your account has been created successfully. You can now sign in.",
       });
       
-      // Switch to sign in tab
-      setActiveTab("signin");
-      // Clear the signup form
+      // Clear the signup form and show signin form
       setWanikaniKey("");
       setOpenaiKey("");
       setElevenLabsKey("");
+      setShowSignUp(false);
     } catch (error: any) {
       toast({
         title: "Registration error",
@@ -135,7 +133,7 @@ const Auth = () => {
   };
 
   return (
-    <Layout>
+    <Layout hideHeader={true}>
       <div className="flex flex-col items-center justify-center py-8">
         <div className="flex items-center gap-3 mb-8">
           <MessageCircle className="h-8 w-8 text-primary" />
@@ -150,13 +148,8 @@ const Auth = () => {
             </CardDescription>
           </CardHeader>
           
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="signin">
+          {!showSignUp ? (
+            <>
               <form onSubmit={handleSignIn}>
                 <CardContent className="space-y-4 pt-4">
                   <div className="space-y-2">
@@ -184,7 +177,7 @@ const Auth = () => {
                   </div>
                 </CardContent>
                 
-                <CardFooter>
+                <CardFooter className="flex flex-col space-y-3">
                   <Button 
                     type="submit" 
                     className="w-full" 
@@ -192,11 +185,21 @@ const Auth = () => {
                   >
                     {loading ? "Signing in..." : "Sign In"}
                   </Button>
+                  
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => setShowSignUp(true)}
+                    disabled={loading}
+                  >
+                    Create Account
+                  </Button>
                 </CardFooter>
               </form>
-            </TabsContent>
-            
-            <TabsContent value="signup">
+            </>
+          ) : (
+            <>
               <form onSubmit={handleSignUp}>
                 <CardContent className="space-y-4 pt-4">
                   <div className="space-y-2">
@@ -239,20 +242,23 @@ const Auth = () => {
                         disabled={loading}
                         required
                       />
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <div className="flex items-center text-xs text-muted-foreground mt-1">
                         <a 
                           href="https://www.wanikani.com/settings/personal_access_tokens" 
                           target="_blank" 
                           rel="noreferrer"
-                          className="text-primary hover:underline"
+                          className="text-primary hover:underline flex items-center"
                         >
                           Get your WaniKani API key
+                          <ExternalLink className="h-3 w-3 ml-1" />
                         </a>
-                      </p>
+                      </div>
                     </div>
                     
                     <div className="space-y-2 mt-2">
-                      <Label htmlFor="openai-key">OpenAI API Key</Label>
+                      <Label htmlFor="openai-key">
+                        OpenAI API Key <span className="text-red-500">*</span>
+                      </Label>
                       <Input
                         id="openai-key"
                         type="password"
@@ -260,11 +266,25 @@ const Auth = () => {
                         value={openaiKey}
                         onChange={(e) => setOpenaiKey(e.target.value)}
                         disabled={loading}
+                        required
                       />
+                      <div className="flex items-center text-xs text-muted-foreground mt-1">
+                        <a 
+                          href="https://platform.openai.com/api-keys" 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="text-primary hover:underline flex items-center"
+                        >
+                          Get your OpenAI API key
+                          <ExternalLink className="h-3 w-3 ml-1" />
+                        </a>
+                      </div>
                     </div>
                     
                     <div className="space-y-2 mt-2">
-                      <Label htmlFor="elevenlabs-key">ElevenLabs API Key</Label>
+                      <Label htmlFor="elevenlabs-key">
+                        ElevenLabs API Key <span className="text-red-500">*</span>
+                      </Label>
                       <Input
                         id="elevenlabs-key"
                         type="password"
@@ -272,12 +292,24 @@ const Auth = () => {
                         value={elevenLabsKey}
                         onChange={(e) => setElevenLabsKey(e.target.value)}
                         disabled={loading}
+                        required
                       />
+                      <div className="flex items-center text-xs text-muted-foreground mt-1">
+                        <a 
+                          href="https://docs.elevenlabs.io/api-reference/quick-start/authentication" 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="text-primary hover:underline flex items-center"
+                        >
+                          Get your ElevenLabs API key
+                          <ExternalLink className="h-3 w-3 ml-1" />
+                        </a>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
                 
-                <CardFooter>
+                <CardFooter className="flex flex-col space-y-3">
                   <Button 
                     type="submit" 
                     className="w-full" 
@@ -285,10 +317,20 @@ const Auth = () => {
                   >
                     {loading ? "Creating account..." : "Create Account"}
                   </Button>
+                  
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => setShowSignUp(false)}
+                    disabled={loading}
+                  >
+                    Back to Sign In
+                  </Button>
                 </CardFooter>
               </form>
-            </TabsContent>
-          </Tabs>
+            </>
+          )}
         </Card>
       </div>
     </Layout>
