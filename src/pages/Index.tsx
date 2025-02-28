@@ -245,7 +245,7 @@ const Index = () => {
     
     toast({
       title: "Logged out",
-      description: "You have been logged out of WaniKani. Your local session has been cleared.",
+      description: "You have been logged out. Your local session has been cleared.",
     });
   };
 
