@@ -76,6 +76,7 @@ const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({ open, onOpenC
 
   const handleCancel = () => {
     if (loading) return;
+    // Simply close the dialog without any side effects
     onOpenChange(false);
   };
 
@@ -88,7 +89,12 @@ const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({ open, onOpenC
   return (
     <Dialog 
       open={open} 
-      onOpenChange={loading ? undefined : onOpenChange}
+      onOpenChange={(newOpen) => {
+        // Only allow changing if not loading and if we're closing the dialog
+        if (!loading && (newOpen === false || !open)) {
+          onOpenChange(newOpen);
+        }
+      }}
     >
       <DialogContent 
         onInteractOutside={(e) => {
@@ -113,6 +119,7 @@ const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({ open, onOpenC
             variant="outline"
             onClick={handleCancel}
             disabled={loading}
+            type="button"
           >
             Cancel
           </Button>
