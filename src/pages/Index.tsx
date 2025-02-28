@@ -166,10 +166,7 @@ const Index = () => {
       const vocabulary = await fetchAllAvailableVocabulary(apiKey, userData.level);
       setAppState((prev) => ({ ...prev, vocabulary }));
       
-      toast({
-        title: "Connected to WaniKani",
-        description: `Loaded ${vocabulary.length} vocabulary items from your account (SRS started items only).`,
-      });
+      // Remove the toast notification
     } catch (error) {
       console.error("Error in handleWaniKaniAuth:", error);
       toast({
@@ -218,10 +215,7 @@ const Index = () => {
       setIsLoading(true);
       const vocabulary = await fetchAllAvailableVocabulary(apiKey, user.level);
       setAppState((prev) => ({ ...prev, vocabulary }));
-      toast({
-        title: "Connected to WaniKani",
-        description: `Loaded ${vocabulary.length} vocabulary items from your account (SRS started items only).`,
-      });
+      // Removed the toast notification here
     } catch (error) {
       console.error("Error loading vocabulary:", error);
       toast({
