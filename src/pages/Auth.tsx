@@ -296,7 +296,7 @@ const Auth = () => {
                       />
                       <div className="flex items-center text-xs text-muted-foreground mt-1">
                         <a 
-                          href="https://docs.elevenlabs.io/api-reference/quick-start/authentication" 
+                          href="https://elevenlabs.io/app/settings/api-keys" 
                           target="_blank" 
                           rel="noreferrer"
                           className="text-primary hover:underline flex items-center"
