@@ -65,7 +65,8 @@ const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({
       }
       
       // Try to use the RPC function to delete user
-      const { error: userDeleteError } = await supabase.rpc('delete_user');
+      // Pass an empty object as the parameter to fix the type error
+      const { error: userDeleteError } = await supabase.rpc('delete_user', {});
       
       if (userDeleteError) {
         // If RPC fails, fallback to just signing out
