@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { GeneratedSentence, TestType } from "@/lib/types";
-import { Loader2, Check, X, ArrowRight, RotateCcw, Volume2, VolumeX, Headphones, Languages, Type } from "lucide-react";
+import { Loader2, Check, X, ArrowRight, RotateCcw, Play, Pause, Headphones, Languages, Type } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { generateSpeech } from "@/services/elevenLabsService";
 
@@ -440,7 +440,7 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
                     onClick={toggleAudio}
                     disabled={isLoadingAudio}
                   >
-                    {isPlaying ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+                    {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
                   </Button>
                 ) : (
                   <Button 
@@ -449,7 +449,7 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
                     onClick={() => generateAudio(isListeningTest)}
                     disabled={isLoadingAudio}
                   >
-                    {isLoadingAudio ? <Loader2 className="h-5 w-5 animate-spin" /> : <Volume2 className="h-5 w-5" />}
+                    {isLoadingAudio ? <Loader2 className="h-5 w-5 animate-spin" /> : <Play className="h-5 w-5" />}
                   </Button>
                 )
               ) : null}
