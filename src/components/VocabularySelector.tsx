@@ -20,107 +20,21 @@ const VocabularySelector: React.FC<VocabularySelectorProps> = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredVocabulary, setFilteredVocabulary] = useState<SelectedVocabulary[]>(vocabulary);
   const [currentPage, setCurrentPage] = useState(1);
-  const [activeLevel, setActiveLevel] = useState<number | null>(null);
   const itemsPerPage = 30; // Show 30 items per page to reduce overwhelming display
 
-  // Get the user's current level from localStorage
-  const getCurrentUserLevel = (): number => {
-    try {
-      const appStateStr = localStorage.getItem("speechbubble-app-state");
-      if (appStateStr) {
-        const appState = JSON.parse(appStateStr);
-        return appState.user?.level || 60; // Default to max level if not found
-      }
-    } catch (error) {
-      console.error("Error getting user level:", error);
-    }
-    return 60; // Default to max level if not found
-  };
-
-  // Group vocabulary by level - using the actual level from the data structure
-  const vocabularyByLevel = React.useMemo(() => {
-    const byLevel: { [key: number]: SelectedVocabulary[] } = {};
-    vocabulary.forEach(vocab => {
-      // Extract level from ID - in WaniKani, each level typically has items with IDs in specific ranges
-      // This is a more accurate approach than the previous modulo operation
-      const vocabId = vocab.id;
-      let level = 1;
-      
-      // For WaniKani vocabulary, we can determine the level from the ID
-      // Let's use a more accurate algorithm based on actual data patterns
-      if (vocabId < 2000) {
-        level = Math.ceil(vocabId / 50); // Approximation for lower levels
-      } else if (vocabId < 8000) {
-        level = Math.ceil((vocabId - 2000) / 150) + 3; // Mid levels
-      } else {
-        level = Math.min(Math.ceil((vocabId - 8000) / 200) + 40, 60); // Higher levels
-      }
-      
-      // Ensure level is within expected range
-      level = Math.max(1, Math.min(level, 60));
-      
-      if (!byLevel[level]) {
-        byLevel[level] = [];
-      }
-      // Add vocabulary to the level group with the calculated level property
-      const vocabWithLevel: SelectedVocabulary = {...vocab, level};
-      byLevel[level].push(vocabWithLevel);
-    });
-    return byLevel;
-  }, [vocabulary]);
-
-  // Get available levels
-  const availableLevels = React.useMemo(() => {
-    return Object.keys(vocabularyByLevel).map(Number).sort((a, b) => a - b);
-  }, [vocabularyByLevel]);
-
-  // Filter levels to show only up to user's current level
-  const currentUserLevel = getCurrentUserLevel();
-  const filteredLevels = availableLevels.filter(level => level <= currentUserLevel);
-
-  // Set default selection to all items on initial load
   useEffect(() => {
-    if (vocabulary.length > 0 && selectedIds.length === 0) {
-      handleSelectAll();
-    }
-  }, [vocabulary]);
-
-  useEffect(() => {
-    // Apply both search term and level filtering
-    let filtered = vocabulary;
-    
-    // First apply level filter if active
-    if (activeLevel !== null) {
-      filtered = filtered.filter(vocab => {
-        const vocabId = vocab.id;
-        let level = 1;
-        
-        // Use the same level calculation as in vocabularyByLevel
-        if (vocabId < 2000) {
-          level = Math.ceil(vocabId / 50);
-        } else if (vocabId < 8000) {
-          level = Math.ceil((vocabId - 2000) / 150) + 3;
-        } else {
-          level = Math.min(Math.ceil((vocabId - 8000) / 200) + 40, 60);
-        }
-        
-        level = Math.max(1, Math.min(level, 60));
-        return level === activeLevel;
-      });
-    }
-    
-    // Then apply search term filter
     if (searchTerm) {
-      filtered = filtered.filter(
+      const filtered = vocabulary.filter(
         (vocab) =>
           vocab.characters.toLowerCase().includes(searchTerm.toLowerCase()) ||
           vocab.meanings.some((m) => m.toLowerCase().includes(searchTerm.toLowerCase()))
       );
+      setFilteredVocabulary(filtered);
+      setCurrentPage(1); // Reset to first page when search changes
+    } else {
+      setFilteredVocabulary(vocabulary);
     }
-    
-    setFilteredVocabulary(filtered);
-    setCurrentPage(1); // Reset to first page when filters change
-  }, [searchTerm, vocabulary, activeLevel]);
+  }, [searchTerm, vocabulary]);
 
   useEffect(() => {
     const selectedVocabulary = vocabulary.filter((vocab) =>
@@ -135,37 +49,14 @@ const VocabularySelector: React.FC<VocabularySelectorProps> = ({
     );
   };
 
-  const handleSelectLevel = (level: number) => {
-    // Toggle the active level filter
-    if (activeLevel === level) {
-      setActiveLevel(null); // Deactivate level filter if already active
-    } else {
-      setActiveLevel(level); // Activate level filter
-    }
-    
-    // Toggle selection of all vocabulary items in this level
-    const levelVocabIds = vocabularyByLevel[level]?.map(vocab => vocab.id) || [];
-    setSelectedIds(prev => {
-      // If all level vocab is already selected, deselect them
-      const allLevelSelected = levelVocabIds.every(id => prev.includes(id));
-      if (allLevelSelected) {
-        return prev.filter(id => !levelVocabIds.includes(id));
-      }
-      // Otherwise, add all level vocab to selection
-      const newSelection = [...prev];
-      levelVocabIds.forEach(id => {
-        if (!newSelection.includes(id)) {
-          newSelection.push(id);
-        }
-      });
-      return newSelection;
-    });
+  const handleSelectRandom = (count: number) => {
+    const shuffled = [...vocabulary].sort(() => 0.5 - Math.random());
+    const randomIds = shuffled.slice(0, count).map((vocab) => vocab.id);
+    setSelectedIds(randomIds);
   };
 
   const handleSelectAll = () => {
     setSelectedIds(filteredVocabulary.map((vocab) => vocab.id));
-    // Clear the level filter when selecting all
-    setActiveLevel(null);
   };
 
   const handleClearSelection = () => {
@@ -190,11 +81,6 @@ const VocabularySelector: React.FC<VocabularySelectorProps> = ({
     }
   };
 
-  const clearFilters = () => {
-    setActiveLevel(null);
-    setSearchTerm("");
-  };
-
   return (
     <Card className="app-card w-full slide-up">
       <CardHeader>
@@ -215,57 +101,42 @@ const VocabularySelector: React.FC<VocabularySelectorProps> = ({
             onChange={(e) => setSearchTerm(e.target.value)}
             className="flex-1"
           />
-          {(searchTerm || activeLevel !== null) && (
-            <Button
-              variant="outline"
-              size="sm"
-              type="button"
-              onClick={clearFilters}
-            >
-              Clear Filters
-            </Button>
-          )}
         </div>
         
-        {/* Level buttons and Selection buttons */}
         <div className="flex flex-wrap gap-2">
-          {filteredLevels.length > 0 && (
-            <>
-              {filteredLevels.map(level => (
-                <Button
-                  key={`level-${level}`}
-                  variant={activeLevel === level ? "default" : "outline"}
-                  size="sm"
-                  type="button"
-                  onClick={() => handleSelectLevel(level)}
-                >
-                  Level {level}
-                </Button>
-              ))}
-              <Button
-                variant="outline"
-                size="sm"
-                type="button"
-                onClick={handleSelectAll}
-              >
-                Select All ({vocabulary.length})
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                type="button"
-                onClick={handleClearSelection}
-              >
-                Clear
-              </Button>
-            </>
-          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleSelectRandom(5)}
+          >
+            Random 5
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleSelectRandom(10)}
+          >
+            Random 10
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSelectAll}
+          >
+            Select All ({filteredVocabulary.length})
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleClearSelection}
+          >
+            Clear
+          </Button>
         </div>
         
         <div className="text-sm text-muted-foreground">
           {selectedIds.length} of {vocabulary.length} words selected | 
-          {activeLevel !== null && <span> Filtered to Level {activeLevel} | </span>}
-          Showing {filteredVocabulary.length > 0 ? startIndex + 1 : 0}-{endIndex} of {filteredVocabulary.length}
+          Showing {startIndex + 1}-{endIndex} of {filteredVocabulary.length}
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 mt-4 max-h-80 overflow-y-auto p-1">
@@ -300,18 +171,11 @@ const VocabularySelector: React.FC<VocabularySelectorProps> = ({
           ))}
         </div>
         
-        {filteredVocabulary.length === 0 && (
-          <div className="text-center p-4 text-muted-foreground">
-            No vocabulary found matching the current filters.
-          </div>
-        )}
-        
         {totalPages > 1 && (
           <div className="flex justify-between items-center mt-4">
             <Button
               variant="outline"
               size="sm"
-              type="button"
               onClick={prevPage}
               disabled={currentPage === 1}
             >
@@ -323,7 +187,6 @@ const VocabularySelector: React.FC<VocabularySelectorProps> = ({
             <Button
               variant="outline"
               size="sm"
-              type="button"
               onClick={nextPage}
               disabled={currentPage === totalPages}
             >

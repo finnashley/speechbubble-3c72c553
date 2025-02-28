@@ -47,7 +47,6 @@ export interface SelectedVocabulary {
   readings: string[];
   japanese?: string; // Added for compatibility
   english?: string; // Added for compatibility
-  level?: number;    // Added to support level filtering
 }
 
 export type GrammarLevel = "beginner" | "intermediate" | "advanced";
