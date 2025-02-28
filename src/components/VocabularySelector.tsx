@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { SelectedVocabulary } from "../lib/types";
 import { Button } from "@/components/ui/button";
@@ -21,6 +20,33 @@ const VocabularySelector: React.FC<VocabularySelectorProps> = ({
   const [filteredVocabulary, setFilteredVocabulary] = useState<SelectedVocabulary[]>(vocabulary);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 30; // Show 30 items per page to reduce overwhelming display
+
+  // Group vocabulary by level
+  const vocabularyByLevel = React.useMemo(() => {
+    const byLevel: { [key: number]: SelectedVocabulary[] } = {};
+    vocabulary.forEach(vocab => {
+      // Get level from vocab id or default to 1
+      // In WaniKani data structure, level is usually stored in the data
+      const level = vocab.id % 60 || 1; // This is a simplified approach - adjust based on your actual data
+      if (!byLevel[level]) {
+        byLevel[level] = [];
+      }
+      byLevel[level].push(vocab);
+    });
+    return byLevel;
+  }, [vocabulary]);
+
+  // Get available levels
+  const availableLevels = React.useMemo(() => {
+    return Object.keys(vocabularyByLevel).map(Number).sort((a, b) => a - b);
+  }, [vocabularyByLevel]);
+
+  // Set default selection to all items on initial load
+  useEffect(() => {
+    if (vocabulary.length > 0 && selectedIds.length === 0) {
+      handleSelectAll();
+    }
+  }, [vocabulary]);
 
   useEffect(() => {
     if (searchTerm) {
@@ -49,10 +75,23 @@ const VocabularySelector: React.FC<VocabularySelectorProps> = ({
     );
   };
 
-  const handleSelectRandom = (count: number) => {
-    const shuffled = [...vocabulary].sort(() => 0.5 - Math.random());
-    const randomIds = shuffled.slice(0, count).map((vocab) => vocab.id);
-    setSelectedIds(randomIds);
+  const handleSelectLevel = (level: number) => {
+    const levelVocabIds = vocabularyByLevel[level]?.map(vocab => vocab.id) || [];
+    setSelectedIds(prev => {
+      // If all level vocab is already selected, deselect them
+      const allLevelSelected = levelVocabIds.every(id => prev.includes(id));
+      if (allLevelSelected) {
+        return prev.filter(id => !levelVocabIds.includes(id));
+      }
+      // Otherwise, add all level vocab to selection
+      const newSelection = [...prev];
+      levelVocabIds.forEach(id => {
+        if (!newSelection.includes(id)) {
+          newSelection.push(id);
+        }
+      });
+      return newSelection;
+    });
   };
 
   const handleSelectAll = () => {
@@ -104,34 +143,34 @@ const VocabularySelector: React.FC<VocabularySelectorProps> = ({
         </div>
         
         <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleSelectRandom(5)}
-          >
-            Random 5
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleSelectRandom(10)}
-          >
-            Random 10
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSelectAll}
-          >
-            Select All ({filteredVocabulary.length})
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleClearSelection}
-          >
-            Clear
-          </Button>
+          {availableLevels.length > 0 && (
+            <>
+              {availableLevels.map(level => (
+                <Button
+                  key={`level-${level}`}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleSelectLevel(level)}
+                >
+                  Level {level}
+                </Button>
+              ))}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSelectAll}
+              >
+                Select All ({filteredVocabulary.length})
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleClearSelection}
+              >
+                Clear
+              </Button>
+            </>
+          )}
         </div>
         
         <div className="text-sm text-muted-foreground">
