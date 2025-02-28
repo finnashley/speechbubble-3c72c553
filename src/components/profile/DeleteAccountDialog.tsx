@@ -22,6 +22,8 @@ const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({ open, onOpenC
   const [loading, setLoading] = useState(false);
 
   const handleDeleteAccount = async () => {
+    if (loading) return;
+    
     try {
       setLoading(true);
       
@@ -54,30 +56,13 @@ const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({ open, onOpenC
   };
 
   const handleCancel = () => {
-    if (loading) return; // Don't allow cancel while loading
+    if (loading) return;
     onOpenChange(false);
   };
 
   return (
-    <Dialog 
-      open={open} 
-      onOpenChange={(newOpen) => {
-        // Only allow closing if not in loading state
-        if (loading && !newOpen) return;
-        onOpenChange(newOpen);
-      }}
-    >
-      <DialogContent 
-        onEscapeKeyDown={(e) => {
-          if (loading) e.preventDefault();
-        }}
-        onPointerDownOutside={(e) => {
-          if (loading) e.preventDefault();
-        }}
-        onInteractOutside={(e) => {
-          if (loading) e.preventDefault();
-        }}
-      >
+    <Dialog open={open} onOpenChange={loading ? undefined : onOpenChange}>
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Delete Account</DialogTitle>
           <DialogDescription>

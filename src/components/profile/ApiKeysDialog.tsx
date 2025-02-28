@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +25,9 @@ const ApiKeysDialog: React.FC<ApiKeysDialogProps> = ({
   const { toast } = useToast();
 
   // Fetch current API keys when dialog opens
-  React.useEffect(() => {
+  useEffect(() => {
+    let isMounted = true;
+    
     const fetchApiKeys = async () => {
       if (!open || !userId) return;
       
@@ -39,29 +41,37 @@ const ApiKeysDialog: React.FC<ApiKeysDialogProps> = ({
         
         if (error) throw error;
         
-        if (data) {
+        if (data && isMounted) {
           setWanikaniKey(data.wanikani_key || "");
           setOpenaiKey(data.openai_key || "");
           setElevenLabsKey(data.elevenlabs_key || "");
         }
       } catch (error: any) {
         console.error("Error fetching API keys:", error);
-        toast({
-          title: "Error fetching API keys",
-          description: error.message || "Failed to load your API keys",
-          variant: "destructive",
-        });
+        if (isMounted) {
+          toast({
+            title: "Error fetching API keys",
+            description: error.message || "Failed to load your API keys",
+            variant: "destructive",
+          });
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchApiKeys();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [open, userId, toast]);
 
   // Update API keys
   const handleUpdateApiKeys = async () => {
-    if (!userId) return;
+    if (loading || !userId) return;
     
     if (!wanikaniKey || !openaiKey || !elevenLabsKey) {
       toast({
@@ -110,31 +120,13 @@ const ApiKeysDialog: React.FC<ApiKeysDialogProps> = ({
   };
 
   const handleCancel = () => {
-    if (loading) return; // Don't allow cancel while loading
+    if (loading) return;
     onOpenChange(false);
   };
 
   return (
-    <Dialog 
-      open={open} 
-      onOpenChange={(newOpen) => {
-        // Only allow closing if not in loading state
-        if (loading && !newOpen) return;
-        onOpenChange(newOpen);
-      }}
-    >
-      <DialogContent 
-        className="sm:max-w-md"
-        onEscapeKeyDown={(e) => {
-          if (loading) e.preventDefault();
-        }}
-        onPointerDownOutside={(e) => {
-          if (loading) e.preventDefault();
-        }}
-        onInteractOutside={(e) => {
-          if (loading) e.preventDefault();
-        }}
-      >
+    <Dialog open={open} onOpenChange={loading ? undefined : onOpenChange}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Edit API Keys</DialogTitle>
           <DialogDescription>
