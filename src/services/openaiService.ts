@@ -12,7 +12,12 @@ import { v4 as uuidv4 } from 'uuid';
 const API_URL = "https://api.openai.com/v1/chat/completions";
 
 const getAuthHeader = () => {
-  const apiKey = localStorage.getItem("openai_api_key");
+  const apiKey = localStorage.getItem("openai-api-key");
+  
+  if (!apiKey) {
+    throw new Error("OpenAI API key not found. Please add your API key in the settings.");
+  }
+  
   return {
     Authorization: `Bearer ${apiKey}`,
   };
