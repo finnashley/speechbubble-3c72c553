@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { SelectedVocabulary } from "../lib/types";
 import { Button } from "@/components/ui/button";
@@ -120,6 +121,24 @@ const VocabularySelector: React.FC<VocabularySelectorProps> = ({
     }
   };
 
+  // Get the user's current level from localStorage (assuming it's stored there from API response)
+  const getCurrentUserLevel = (): number => {
+    try {
+      const appStateStr = localStorage.getItem("speechbubble-app-state");
+      if (appStateStr) {
+        const appState = JSON.parse(appStateStr);
+        return appState.user?.level || 60; // Default to max level if not found
+      }
+    } catch (error) {
+      console.error("Error getting user level:", error);
+    }
+    return 60; // Default to max level if not found
+  };
+
+  // Filter levels to show only up to user's current level
+  const currentUserLevel = getCurrentUserLevel();
+  const filteredLevels = availableLevels.filter(level => level <= currentUserLevel);
+
   return (
     <Card className="app-card w-full slide-up">
       <CardHeader>
@@ -143,13 +162,14 @@ const VocabularySelector: React.FC<VocabularySelectorProps> = ({
         </div>
         
         <div className="flex flex-wrap gap-2">
-          {availableLevels.length > 0 && (
+          {filteredLevels.length > 0 && (
             <>
-              {availableLevels.map(level => (
+              {filteredLevels.map(level => (
                 <Button
                   key={`level-${level}`}
                   variant="outline"
                   size="sm"
+                  type="button"
                   onClick={() => handleSelectLevel(level)}
                 >
                   Level {level}
@@ -158,6 +178,7 @@ const VocabularySelector: React.FC<VocabularySelectorProps> = ({
               <Button
                 variant="outline"
                 size="sm"
+                type="button"
                 onClick={handleSelectAll}
               >
                 Select All ({filteredVocabulary.length})
@@ -165,6 +186,7 @@ const VocabularySelector: React.FC<VocabularySelectorProps> = ({
               <Button
                 variant="outline"
                 size="sm"
+                type="button"
                 onClick={handleClearSelection}
               >
                 Clear
@@ -215,6 +237,7 @@ const VocabularySelector: React.FC<VocabularySelectorProps> = ({
             <Button
               variant="outline"
               size="sm"
+              type="button"
               onClick={prevPage}
               disabled={currentPage === 1}
             >
@@ -226,6 +249,7 @@ const VocabularySelector: React.FC<VocabularySelectorProps> = ({
             <Button
               variant="outline"
               size="sm"
+              type="button"
               onClick={nextPage}
               disabled={currentPage === totalPages}
             >
