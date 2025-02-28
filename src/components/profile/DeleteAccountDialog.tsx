@@ -57,9 +57,24 @@ const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({ open, onOpenC
     onOpenChange(false);
   };
 
+  // Ensure the dialog doesn't hang when clicking outside
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen && !loading) {
+      onOpenChange(false);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent onInteractOutside={(e) => {
+        if (!loading) {
+          e.preventDefault();
+          onOpenChange(false);
+        } else {
+          // Prevent closing if loading
+          e.preventDefault();
+        }
+      }}>
         <DialogHeader>
           <DialogTitle>Delete Account</DialogTitle>
           <DialogDescription>

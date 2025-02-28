@@ -105,9 +105,24 @@ const ApiKeysDialog: React.FC<ApiKeysDialogProps> = ({
     }
   };
 
+  // Ensure the dialog doesn't hang when clicking outside
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen && !loading) {
+      onOpenChange(false);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="sm:max-w-md" onInteractOutside={(e) => {
+        if (!loading) {
+          e.preventDefault();
+          onOpenChange(false);
+        } else {
+          // Prevent closing if loading
+          e.preventDefault();
+        }
+      }}>
         <DialogHeader>
           <DialogTitle>Edit API Keys</DialogTitle>
           <DialogDescription>
