@@ -62,7 +62,9 @@ const VocabularySelector: React.FC<VocabularySelectorProps> = ({
       if (!byLevel[level]) {
         byLevel[level] = [];
       }
-      byLevel[level].push({...vocab, level}); // Add level to vocab object for easier reference
+      // Add vocabulary to the level group with the calculated level property
+      const vocabWithLevel: SelectedVocabulary = {...vocab, level};
+      byLevel[level].push(vocabWithLevel);
     });
     return byLevel;
   }, [vocabulary]);
