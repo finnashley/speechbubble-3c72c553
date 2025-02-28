@@ -105,21 +105,23 @@ const VocabularySelector: React.FC<VocabularySelectorProps> = ({
         
         <div className="flex flex-wrap gap-2">
           <Button
-            variant="outline"
+            variant={selectedIds.length === 5 && selectedIds.every(id => 
+              vocabulary.findIndex(v => v.id === id) < 5) ? "default" : "outline"}
             size="sm"
             onClick={() => handleSelectRandom(5)}
           >
             Random 5
           </Button>
           <Button
-            variant="outline"
+            variant={selectedIds.length === 10 && selectedIds.every(id => 
+              vocabulary.findIndex(v => v.id === id) < 10) ? "default" : "outline"}
             size="sm"
             onClick={() => handleSelectRandom(10)}
           >
             Random 10
           </Button>
           <Button
-            variant="outline"
+            variant={selectedIds.length === filteredVocabulary.length ? "default" : "outline"}
             size="sm"
             onClick={handleSelectAll}
           >
@@ -129,6 +131,7 @@ const VocabularySelector: React.FC<VocabularySelectorProps> = ({
             variant="outline"
             size="sm"
             onClick={handleClearSelection}
+            className={selectedIds.length === 0 ? "bg-muted" : ""}
           >
             Clear
           </Button>
@@ -178,6 +181,7 @@ const VocabularySelector: React.FC<VocabularySelectorProps> = ({
               size="sm"
               onClick={prevPage}
               disabled={currentPage === 1}
+              className={currentPage === 1 ? "opacity-50" : ""}
             >
               Previous
             </Button>
@@ -189,6 +193,7 @@ const VocabularySelector: React.FC<VocabularySelectorProps> = ({
               size="sm"
               onClick={nextPage}
               disabled={currentPage === totalPages}
+              className={currentPage === totalPages ? "opacity-50" : ""}
             >
               Next
             </Button>
