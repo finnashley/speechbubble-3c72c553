@@ -20,6 +20,20 @@ const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({ open, onOpenC
   const { toast } = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [isDeleted, setIsDeleted] = useState(false);
+
+  // Clean up function to be called after successful deletion
+  const cleanupAfterDeletion = async () => {
+    try {
+      // Sign the user out after account deletion
+      await signOut();
+      
+      // Navigate to the authentication page and pass state
+      navigate("/auth", { state: { fromAccountDeletion: true } });
+    } catch (error) {
+      console.error("Error during post-deletion cleanup:", error);
+    }
+  };
 
   const handleDeleteAccount = async () => {
     if (loading) return;
@@ -34,14 +48,19 @@ const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({ open, onOpenC
         throw error;
       }
       
-      // Sign the user out after account deletion
-      await signOut();
+      // Mark as deleted to prevent further API calls
+      setIsDeleted(true);
       
-      // Close the dialog
+      // Close the dialog first
       onOpenChange(false);
       
-      // Navigate to the authentication page and pass state
-      navigate("/auth", { state: { fromAccountDeletion: true } });
+      // Then perform cleanup operations
+      setTimeout(cleanupAfterDeletion, 100);
+      
+      toast({
+        title: "Account deleted",
+        description: "Your account has been successfully deleted.",
+      });
       
     } catch (error: any) {
       console.error("Error deleting account:", error);
@@ -60,13 +79,29 @@ const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({ open, onOpenC
     onOpenChange(false);
   };
 
-  // Using the DialogClose component to create a more controlled dialog
+  // If the account is already deleted, don't render the dialog
+  // to prevent any further API calls
+  if (isDeleted) {
+    return null;
+  }
+
   return (
     <Dialog 
       open={open} 
       onOpenChange={loading ? undefined : onOpenChange}
     >
-      <DialogContent>
+      <DialogContent 
+        onInteractOutside={(e) => {
+          if (loading) {
+            e.preventDefault();
+          }
+        }}
+        onEscapeKeyDown={(e) => {
+          if (loading) {
+            e.preventDefault();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Delete Account</DialogTitle>
           <DialogDescription>
