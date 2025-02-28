@@ -48,9 +48,14 @@ const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({ open, onOpenC
         description: error.message || "Something went wrong. Please try again.",
         variant: "destructive",
       });
-    } finally {
+      // Make sure to reset loading state even when an error occurs
       setLoading(false);
     }
+  };
+
+  const handleCancel = () => {
+    // Simply close the dialog without any side effects
+    onOpenChange(false);
   };
 
   return (
@@ -65,7 +70,7 @@ const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({ open, onOpenC
         <DialogFooter className="gap-2 sm:gap-0">
           <Button
             variant="outline"
-            onClick={() => onOpenChange(false)}
+            onClick={handleCancel}
             disabled={loading}
           >
             Cancel
