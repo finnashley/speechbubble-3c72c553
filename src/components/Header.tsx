@@ -1,10 +1,11 @@
 
 import React from "react";
 import { WaniKaniUser } from "../lib/types";
-import { LogOut, MessageCircle, LogIn, ExternalLink } from "lucide-react";
+import { MessageCircle, LogIn, ExternalLink } from "lucide-react";
 import { Button } from "./ui/button";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import ProfileDropdown from "./ProfileDropdown";
 
 interface HeaderProps {
   user?: WaniKaniUser | null;
@@ -53,24 +54,13 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
               onClick={handleLogout}
               className="flex items-center gap-1"
             >
-              <LogOut className="h-4 w-4" />
+              <LogIn className="h-4 w-4" />
               Logout
             </Button>
           </div>
         ) : authUser ? (
-          <div className="flex items-center gap-4">
-            <div className="text-sm">
-              <span className="font-medium">{authUser.email}</span>
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleLogout}
-              className="flex items-center gap-1"
-            >
-              <LogOut className="h-4 w-4" />
-              Logout
-            </Button>
+          <div className="flex items-center gap-2">
+            <ProfileDropdown />
           </div>
         ) : (
           <div className="flex items-center">
