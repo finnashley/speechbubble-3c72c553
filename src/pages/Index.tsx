@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { fetchAllAvailableVocabulary } from "@/services/wanikaniService";
 import { generateSentences } from "@/services/openaiService";
 import { AppState, WaniKaniUser, SelectedVocabulary, GeneratedSentence, GrammarLevel, TestType } from "@/lib/types";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -229,27 +229,6 @@ const Index = () => {
     });
   };
 
-  const handleClearAllData = () => {
-    // Clear all local storage
-    localStorage.clear();
-    
-    // Reset state
-    setAppState({
-      apiKey: null,
-      user: null,
-      vocabulary: [],
-      generatedSentences: [],
-    });
-    setSelectedVocabulary([]);
-    setTestSentences([]);
-    setIsTestMode(false);
-    
-    toast({
-      title: "All data cleared",
-      description: "All local storage and application state has been reset.",
-    });
-  };
-
   const handleSelectionChange = (selected: SelectedVocabulary[]) => {
     setSelectedVocabulary(selected);
   };
@@ -358,17 +337,6 @@ const Index = () => {
           
           <WaniKaniAuth onAuthenticated={handleAuthenticated} />
           
-          <div className="flex justify-center mt-8">
-            <Button 
-              variant="destructive" 
-              onClick={handleClearAllData}
-              className="flex items-center gap-2"
-            >
-              <Trash2 className="h-4 w-4" />
-              Clear All Local Data
-            </Button>
-          </div>
-          
           {appState.generatedSentences.length > 0 && (
             <HistorySection
               sentences={appState.generatedSentences}
@@ -391,18 +359,6 @@ const Index = () => {
                 <p className="text-sm text-muted-foreground">
                   Select vocabulary words you want to practice with, then start a test to practice with generated sentences or individual vocabulary.
                 </p>
-                
-                <div className="mt-4">
-                  <Button 
-                    variant="destructive" 
-                    onClick={handleClearAllData}
-                    className="flex items-center gap-2"
-                    size="sm"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Clear All Local Data
-                  </Button>
-                </div>
               </CardContent>
             </Card>
           )}
