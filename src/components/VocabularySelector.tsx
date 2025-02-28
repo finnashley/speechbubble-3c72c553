@@ -227,6 +227,7 @@ const VocabularySelector: React.FC<VocabularySelectorProps> = ({
           )}
         </div>
         
+        {/* Level buttons and Selection buttons */}
         <div className="flex flex-wrap gap-2">
           {filteredLevels.length > 0 && (
             <>
