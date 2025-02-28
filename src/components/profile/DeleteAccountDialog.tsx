@@ -60,8 +60,12 @@ const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({ open, onOpenC
     onOpenChange(false);
   };
 
+  // Using the DialogClose component to create a more controlled dialog
   return (
-    <Dialog open={open} onOpenChange={loading ? undefined : onOpenChange}>
+    <Dialog 
+      open={open} 
+      onOpenChange={loading ? undefined : onOpenChange}
+    >
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Delete Account</DialogTitle>

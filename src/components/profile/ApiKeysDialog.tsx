@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,50 +24,56 @@ const ApiKeysDialog: React.FC<ApiKeysDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  // Fetch current API keys when dialog opens
-  useEffect(() => {
-    let isMounted = true;
+  // Create a memoized fetchApiKeys function
+  const fetchApiKeys = useCallback(async () => {
+    if (!open || !userId) return;
     
-    const fetchApiKeys = async () => {
-      if (!open || !userId) return;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('wanikani_key, openai_key, elevenlabs_key')
+        .eq('id', userId)
+        .single();
       
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('wanikani_key, openai_key, elevenlabs_key')
-          .eq('id', userId)
-          .single();
-        
-        if (error) throw error;
-        
-        if (data && isMounted) {
-          setWanikaniKey(data.wanikani_key || "");
-          setOpenaiKey(data.openai_key || "");
-          setElevenLabsKey(data.elevenlabs_key || "");
-        }
-      } catch (error: any) {
-        console.error("Error fetching API keys:", error);
-        if (isMounted) {
-          toast({
-            title: "Error fetching API keys",
-            description: error.message || "Failed to load your API keys",
-            variant: "destructive",
-          });
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+      if (error) throw error;
+      
+      if (data) {
+        setWanikaniKey(data.wanikani_key || "");
+        setOpenaiKey(data.openai_key || "");
+        setElevenLabsKey(data.elevenlabs_key || "");
       }
-    };
+    } catch (error: any) {
+      console.error("Error fetching API keys:", error);
+      toast({
+        title: "Error fetching API keys",
+        description: error.message || "Failed to load your API keys",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [open, userId, toast]);
 
-    fetchApiKeys();
+  // Fetch API keys when the dialog opens
+  useEffect(() => {
+    let mounted = true;
+    
+    if (open && mounted) {
+      fetchApiKeys();
+    }
     
     return () => {
-      isMounted = false;
+      mounted = false;
     };
-  }, [open, userId, toast]);
+  }, [open, fetchApiKeys]);
+
+  // Reset form state when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setLoading(false);
+    }
+  }, [open]);
 
   // Update API keys
   const handleUpdateApiKeys = async () => {
@@ -107,6 +113,8 @@ const ApiKeysDialog: React.FC<ApiKeysDialogProps> = ({
         description: "Your API keys have been updated successfully",
       });
       
+      // First set loading to false before closing the dialog
+      setLoading(false);
       onOpenChange(false);
     } catch (error: any) {
       toast({
@@ -114,7 +122,6 @@ const ApiKeysDialog: React.FC<ApiKeysDialogProps> = ({
         description: error.message || "Failed to update your API keys",
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
     }
   };
@@ -125,7 +132,10 @@ const ApiKeysDialog: React.FC<ApiKeysDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={loading ? undefined : onOpenChange}>
+    <Dialog 
+      open={open} 
+      onOpenChange={loading ? undefined : onOpenChange}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Edit API Keys</DialogTitle>

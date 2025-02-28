@@ -37,6 +37,14 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ onLogout, wanikaniUse
     navigate("/auth");
   };
 
+  const handleOpenApiKeys = () => {
+    setShowApiKeys(true);
+  };
+
+  const handleOpenDeleteAccount = () => {
+    setShowDeleteAccount(true);
+  };
+
   if (!user) return null;
 
   // Use wanikaniUser's username, or user's email if available, or fallback to "User"
@@ -54,14 +62,14 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ onLogout, wanikaniUse
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>My Account</DropdownMenuLabel>
-          <DropdownMenuItem className="cursor-pointer" onClick={() => setShowApiKeys(true)}>
+          <DropdownMenuItem className="cursor-pointer" onClick={handleOpenApiKeys}>
             <Key className="mr-2 h-4 w-4" />
             <span>Edit API Keys</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem 
             className="cursor-pointer text-destructive focus:text-destructive" 
-            onClick={() => setShowDeleteAccount(true)}
+            onClick={handleOpenDeleteAccount}
           >
             <Trash2 className="mr-2 h-4 w-4" />
             <span>Delete Account</span>
