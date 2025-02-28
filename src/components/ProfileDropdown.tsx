@@ -24,8 +24,14 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { WaniKaniUser } from "@/lib/types";
 
-const ProfileDropdown: React.FC = () => {
+interface ProfileDropdownProps {
+  onLogout?: () => void;
+  wanikaniUser?: WaniKaniUser | null;
+}
+
+const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ onLogout, wanikaniUser }) => {
   const { user, signOut } = useAuth();
   const [showApiKeys, setShowApiKeys] = useState(false);
   const [showDeleteAccount, setShowDeleteAccount] = useState(false);
@@ -99,6 +105,10 @@ const ProfileDropdown: React.FC = () => {
         title: "API keys updated",
         description: "Your API keys have been updated successfully",
       });
+
+      // Store API keys in localStorage for service usage
+      localStorage.setItem("openai-api-key", openaiKey);
+      localStorage.setItem("elevenlabs-api-key", elevenLabsKey);
       
       setShowApiKeys(false);
     } catch (error: any) {
@@ -112,7 +122,7 @@ const ProfileDropdown: React.FC = () => {
     }
   };
 
-  // Delete account
+  // Delete full account (not just profile)
   const handleDeleteAccount = async () => {
     if (!user) return;
     
@@ -136,7 +146,17 @@ const ProfileDropdown: React.FC = () => {
     
     setLoading(true);
     try {
-      // First delete the profile
+      // First authenticate with the password to verify user
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: user.email!,
+        password: password,
+      });
+
+      if (authError) {
+        throw new Error("Password verification failed. Please check your password and try again.");
+      }
+
+      // Delete the profile (this will cascade to delete related data)
       const { error: profileError } = await supabase
         .from('profiles')
         .delete()
@@ -144,16 +164,24 @@ const ProfileDropdown: React.FC = () => {
       
       if (profileError) throw profileError;
       
-      // Then delete the user (user needs to reauthenticate first)
-      const { error } = await supabase.auth.signOut();
+      // Then delete the user account
+      const { error: userDeleteError } = await supabase.auth.admin.deleteUser(user.id);
       
-      if (error) throw error;
+      if (userDeleteError) {
+        // Fallback to just signing out if deletion fails (admin APIs might not be available)
+        await supabase.auth.signOut();
+        throw new Error("Could not fully delete account. Your session has been ended, but you may need to contact support for full account deletion.");
+      }
+      
+      // Clear local storage
+      localStorage.clear();
       
       toast({
         title: "Account deleted",
-        description: "Your profile has been deleted. For complete account removal, please contact support.",
+        description: "Your account has been fully deleted from our system.",
       });
       
+      // Redirect to auth page
       navigate("/auth");
     } catch (error: any) {
       toast({
@@ -167,7 +195,19 @@ const ProfileDropdown: React.FC = () => {
     }
   };
 
+  const handleSignOut = async () => {
+    if (onLogout) onLogout();
+    await signOut();
+    
+    // Clear local storage
+    localStorage.clear();
+    
+    navigate("/auth");
+  };
+
   if (!user) return null;
+
+  const displayName = wanikaniUser?.username || user.email;
 
   return (
     <>
@@ -175,7 +215,7 @@ const ProfileDropdown: React.FC = () => {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="flex items-center gap-2 h-9 px-2">
             <User className="h-4 w-4" />
-            <span className="hidden md:inline">{user.email}</span>
+            <span className="hidden md:inline">{displayName}</span>
             <ChevronDown className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
@@ -194,7 +234,7 @@ const ProfileDropdown: React.FC = () => {
             <span>Delete Account</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem className="cursor-pointer" onClick={signOut}>
+          <DropdownMenuItem className="cursor-pointer" onClick={handleSignOut}>
             <LogOut className="mr-2 h-4 w-4" />
             <span>Logout</span>
           </DropdownMenuItem>
@@ -299,7 +339,7 @@ const ProfileDropdown: React.FC = () => {
           <DialogHeader>
             <DialogTitle className="text-destructive">Delete Account</DialogTitle>
             <DialogDescription>
-              This action cannot be undone. Your profile and associated data will be permanently deleted.
+              This action cannot be undone. Your account and all associated data will be permanently deleted.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">

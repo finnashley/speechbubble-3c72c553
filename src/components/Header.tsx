@@ -48,19 +48,11 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
                 WaniKani
               </a>
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleLogout}
-              className="flex items-center gap-1"
-            >
-              <LogIn className="h-4 w-4" />
-              Logout
-            </Button>
+            <ProfileDropdown onLogout={handleLogout} wanikaniUser={user} />
           </div>
         ) : authUser ? (
           <div className="flex items-center gap-2">
-            <ProfileDropdown />
+            <ProfileDropdown onLogout={handleLogout} />
           </div>
         ) : (
           <div className="flex items-center">
