@@ -1,144 +1,71 @@
 
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DeleteAccountDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  user: {
-    id: string;
-    email: string;
-  };
-  signOut: () => Promise<void>;
 }
 
-const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({
-  open,
-  onOpenChange,
-  user,
-  signOut,
-}) => {
-  const [deleteConfirmation, setDeleteConfirmation] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({ open, onOpenChange }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
-  // Delete full account
   const handleDeleteAccount = async () => {
-    if (!user) return;
-    
-    if (deleteConfirmation !== user.email) {
-      toast({
-        title: "Confirmation required",
-        description: "Please type your email address exactly to confirm account deletion",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (!password) {
-      toast({
-        title: "Password required",
-        description: "Please enter your password to confirm account deletion",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setLoading(true);
     try {
-      // First verify the user's password
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: user.email,
-        password: password,
-      });
+      setLoading(true);
       
-      if (signInError) {
-        throw new Error("Password verification failed. Please check your password and try again.");
+      // Call the delete_user function that runs with RLS bypass
+      const { error } = await supabase.rpc('delete_user');
+      
+      if (error) {
+        throw error;
       }
       
-      // Call the delete_user RPC function without any arguments
-      // @ts-ignore - Ignoring TypeScript error as the RPC function exists but TypeScript doesn't recognize its signature
-      const { error: userDeleteError } = await supabase.rpc('delete_user');
+      // Close the dialog
+      onOpenChange(false);
       
-      if (userDeleteError) {
-        // If RPC fails, fallback to just signing out
-        await signOut();
-        throw new Error("Could not fully delete account. Please contact support for account deletion.");
-      }
+      // Navigate to the authentication page and pass state
+      navigate("/auth", { state: { fromAccountDeletion: true } });
       
-      // Clear local storage
-      localStorage.clear();
-      
-      toast({
-        title: "Account deleted",
-        description: "Your account has been fully deleted from our system.",
-      });
-      
-      // Redirect to auth page
-      navigate("/auth");
     } catch (error: any) {
+      console.error("Error deleting account:", error);
       toast({
-        title: "Error deleting account",
-        description: error.message || "Failed to delete your account",
+        title: "Error",
+        description: error.message || "Something went wrong. Please try again.",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
-      onOpenChange(false);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle className="text-destructive">Delete Account</DialogTitle>
+          <DialogTitle>Delete Account</DialogTitle>
           <DialogDescription>
-            This action cannot be undone. Your account and all associated data will be permanently deleted.
+            Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently lost.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-4">
-          <p className="text-sm text-muted-foreground">
-            To confirm deletion, please type your email address: <span className="font-medium">{user.email}</span>
-          </p>
-          <Input
-            value={deleteConfirmation}
-            onChange={(e) => setDeleteConfirmation(e.target.value)}
-            placeholder="Enter your email"
-            disabled={loading}
-          />
-          <div className="space-y-2 pt-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              disabled={loading}
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button 
-            variant="outline" 
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button
+            variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={loading}
           >
             Cancel
           </Button>
-          <Button 
+          <Button
             variant="destructive"
             onClick={handleDeleteAccount}
-            disabled={loading || deleteConfirmation !== user.email || !password}
+            disabled={loading}
           >
             {loading ? "Deleting..." : "Delete Account"}
           </Button>

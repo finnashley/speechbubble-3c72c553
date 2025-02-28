@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,18 +20,36 @@ const Auth = () => {
   const [showSignUp, setShowSignUp] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     // Check if user is already logged in
     const checkUser = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        navigate("/");
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
+          navigate("/");
+        }
+      } catch (error) {
+        console.error("Error checking session:", error);
       }
     };
     
+    // Clear any lingering session data
+    const clearSession = async () => {
+      // If we came from account deletion, ensure we're fully signed out
+      if (location.state?.fromAccountDeletion) {
+        await supabase.auth.signOut();
+        toast({
+          title: "Account deleted",
+          description: "Your account has been successfully deleted.",
+        });
+      }
+    };
+    
+    clearSession();
     checkUser();
-  }, [navigate]);
+  }, [navigate, location.state, toast]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
