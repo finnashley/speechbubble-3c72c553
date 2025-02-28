@@ -9,6 +9,7 @@ import { GeneratedSentence, TestType } from "@/lib/types";
 import { Loader2, Check, X, ArrowRight, RotateCcw, Play, Pause, Headphones, Languages, Type } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { generateSpeech } from "@/services/elevenLabsService";
+import { convertRomajiToKana } from "@/utils/romajiConverter";
 
 interface TestModeProps {
   sentences: GeneratedSentence[];
@@ -26,6 +27,7 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [apiKey, setApiKey] = useState<string | null>(localStorage.getItem("elevenlabs-api-key"));
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+  const [romajiInput, setRomajiInput] = useState("");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
 
@@ -59,6 +61,20 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
   const isVocabMode = isEnglishToJapanese && 
                      (!currentSentence?.japanese?.includes(' ') || 
                       !currentSentence?.english?.includes(' '));
+
+  // Handle romaji input change
+  const handleRomajiInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value;
+    setRomajiInput(input);
+    
+    // Convert romaji to kana only when in English to Japanese mode
+    if (isEnglishToJapanese) {
+      const convertedText = convertRomajiToKana(input);
+      setUserAnswer(convertedText);
+    } else {
+      setUserAnswer(input);
+    }
+  };
 
   // Function to generate speech for the current sentence
   const generateAudio = async (autoPlay = false) => {
@@ -168,6 +184,10 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
       setAudioUrl(null);
     }
     setIsPlaying(false);
+    
+    // Reset romaji input when changing sentences
+    setRomajiInput("");
+    setUserAnswer("");
   }, [currentIndex]);
 
   // Check if user's answer is valid (not a single vowel or too short)
@@ -317,6 +337,7 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
     if (currentIndex < sentences.length - 1) {
       setCurrentIndex(currentIndex + 1);
       setUserAnswer("");
+      setRomajiInput("");
       setIsAnswerSubmitted(false);
     } else {
       // Test completed
@@ -336,6 +357,7 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
   const restartTest = () => {
     setCurrentIndex(0);
     setUserAnswer("");
+    setRomajiInput("");
     setIsAnswerSubmitted(false);
     setScore({ correct: 0, total: 0 });
     toast({
@@ -503,17 +525,38 @@ const TestMode: React.FC<TestModeProps> = ({ sentences, onExitTest }) => {
         </div>
 
         <div className="space-y-2">
-          <Input
-            value={userAnswer}
-            onChange={(e) => setUserAnswer(e.target.value)}
-            placeholder={`Type your ${isEnglishToJapanese ? "Japanese" : "English"} translation here...`}
-            disabled={isAnswerSubmitted}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !isAnswerSubmitted) {
-                checkAnswer();
-              }
-            }}
-          />
+          {isEnglishToJapanese ? (
+            <div className="flex flex-col space-y-2">
+              <Input
+                value={romajiInput}
+                onChange={handleRomajiInputChange}
+                placeholder="Type romaji here (e.g. 'konnichiwa' for 'こんにちは')"
+                disabled={isAnswerSubmitted}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !isAnswerSubmitted) {
+                    checkAnswer();
+                  }
+                }}
+              />
+              <div className="p-2 border rounded-md bg-gray-50 dark:bg-gray-800">
+                <p className="font-japanese text-lg">
+                  {userAnswer || <span className="text-muted-foreground text-sm">Japanese characters will appear here as you type</span>}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <Input
+              value={userAnswer}
+              onChange={(e) => setUserAnswer(e.target.value)}
+              placeholder={`Type your ${isEnglishToJapanese ? "Japanese" : "English"} translation here...`}
+              disabled={isAnswerSubmitted}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !isAnswerSubmitted) {
+                  checkAnswer();
+                }
+              }}
+            />
+          )}
         </div>
 
         <div className="flex justify-between items-center text-sm">
