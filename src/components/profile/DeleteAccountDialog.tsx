@@ -9,9 +9,14 @@ import { supabase } from "@/integrations/supabase/client";
 interface DeleteAccountDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  user: {
+    id: string;
+    email: string;
+  };
+  signOut: () => Promise<void>;
 }
 
-const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({ open, onOpenChange }) => {
+const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({ open, onOpenChange, user, signOut }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -26,6 +31,9 @@ const DeleteAccountDialog: React.FC<DeleteAccountDialogProps> = ({ open, onOpenC
       if (error) {
         throw error;
       }
+      
+      // Sign the user out after account deletion
+      await signOut();
       
       // Close the dialog
       onOpenChange(false);
